@@ -43,11 +43,11 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        // Allow same-origin XHR/fetch + WebSocket (ws: covers ws://, wss: covers wss://)
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        styleSrcElem: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
         connectSrc: ["'self'", 'ws:', 'wss:'],
-        fontSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
         workerSrc: ["'self'", 'blob:'],
         manifestSrc: ["'self'"],
       },
