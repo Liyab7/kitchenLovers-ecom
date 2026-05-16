@@ -4,7 +4,7 @@
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 const sw = /** @type {ServiceWorkerGlobalScope} */ (self);
@@ -23,9 +23,27 @@ registerRoute(new NavigationRoute(async ({ event }) => {
   catch { return caches.match('/index.html'); }
 }));
 
-// Image caching
+// Cloudinary images — CacheFirst, long TTL (URLs are content-addressed)
 registerRoute(
-  ({ request }) => request.destination === 'image',
+  ({ url }) => url.hostname.includes('res.cloudinary.com'),
+  new CacheFirst({
+    cacheName: 'cloudinary-images',
+    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 })],
+  })
+);
+
+// Local /uploads — NetworkFirst so stale 404s are never served from cache
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/uploads'),
+  new NetworkFirst({ cacheName: 'local-uploads' })
+);
+
+// Other images (icons, brand assets, etc.)
+registerRoute(
+  ({ request, url }) =>
+    request.destination === 'image' &&
+    !url.hostname.includes('res.cloudinary.com') &&
+    !url.pathname.startsWith('/uploads'),
   new CacheFirst({
     cacheName: 'images',
     plugins: [new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 })],
