@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply font-sans bg-canvas text-ink antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { @apply text-accent hover:underline; }
+  h1, h2, h3, h4 { @apply font-semibold text-ink; }
+
+  /* Refined native form controls */
+  input, select, textarea { @apply outline-none; }
+  ::selection { background: rgba(255, 107, 53, 0.18); }
+
+  /* Scoped table baseline so admin lists look polished */
+  table { @apply text-sm; }
+  th { @apply text-left font-semibold text-ink/60 text-[11px] uppercase tracking-wider; }
+}
+
+@layer components {
+  /* ---------- Buttons ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-primary/40;
+  }
+  .btn-primary  { @apply btn bg-primary text-white hover:bg-primary-600 shadow-sm hover:shadow; }
+  .btn-outline  { @apply btn border border-ink/15 bg-white text-ink hover:border-ink/30 hover:bg-ink/[0.02]; }
+  .btn-ghost    { @apply btn text-ink hover:bg-ink/5; }
+  .btn-danger   { @apply btn bg-danger text-white hover:bg-danger/90 shadow-sm; }
+  .btn-success  { @apply btn bg-success text-white hover:bg-success/90 shadow-sm; }
+
+  /* Sizes */
+  .btn-sm { @apply px-3 py-1.5 text-xs rounded-md; }
+  .btn-lg { @apply px-5 py-3 text-base rounded-xl; }
+
+  /* ---------- Inputs ---------- */
+  .input {
+    @apply w-full px-3 py-2 text-sm rounded-lg border border-ink/15 bg-white text-ink placeholder:text-ink/35 transition
+           focus:border-primary focus:ring-2 focus:ring-primary/15;
+  }
+  .input-sm { @apply px-2.5 py-1.5 text-xs; }
+  .input-error { @apply border-danger focus:border-danger focus:ring-danger/15; }
+
+  /* ---------- Surfaces ---------- */
+  .card {
+    @apply bg-white rounded-xl border border-ink/[0.06] shadow-card;
+  }
+  .card-flat   { @apply bg-white rounded-xl border border-ink/[0.07]; }
+  .surface-muted { @apply bg-canvas border border-ink/[0.06] rounded-lg; }
+
+  /* ---------- Section helpers ---------- */
+  .section-eyebrow {
+    @apply uppercase tracking-widest text-[11px] text-primary font-semibold;
+  }
+  .section-title {
+    @apply text-xl sm:text-2xl font-extrabold tracking-tight text-ink;
+  }
+
+  /* ---------- Badges ---------- */
+  .badge       { @apply inline-flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-full font-medium; }
+  .badge-success { @apply badge bg-success/10 text-success; }
+  .badge-danger  { @apply badge bg-danger/10 text-danger; }
+  .badge-muted   { @apply badge bg-ink/[0.08] text-ink/70; }
+  .badge-primary { @apply badge bg-primary/10 text-primary; }
+
+  /* ---------- Skeleton loaders ---------- */
+  .skeleton {
+    @apply relative overflow-hidden bg-ink/[0.06] rounded;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { @apply card overflow-hidden; }
+  .table-wrap table { @apply w-full; }
+  .table-wrap thead { @apply bg-canvas/60 border-b border-ink/10; }
+  .table-wrap th, .table-wrap td { @apply px-4 py-3; }
+  .table-wrap tbody tr { @apply border-b border-ink/5 last:border-b-0 hover:bg-ink/[0.015] transition-colors; }
+  .table-wrap td { @apply align-middle; }
+
+  /* Dividers and link styles for content blocks */
+  .content-link { @apply text-primary hover:text-primary-600 underline-offset-2 hover:underline; }
+
+  /* Tight chip group */
+  .chip-row { @apply flex gap-2 overflow-x-auto pb-1 scrollbar-thin; }
+}
+
+@layer utilities {
+  @keyframes slide-up {
+    from { transform: translate(-50%, 24px); opacity: 0; }
+    to   { transform: translate(-50%, 0); opacity: 1; }
+  }
+  .animate-slide-up { animation: slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .animate-fade-in { animation: fade-in 220ms ease-out; }
+
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin { scrollbar-width: thin; }
+
+  /* Hide scrollbar utility (already used in mobile bottom nav) */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
