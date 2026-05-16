@@ -45,10 +45,10 @@ services:
       # uploaded image paths so the frontend can load /uploads from a different
       # origin. Example: https://kitchen-ecom-api.onrender.com
       - key: PUBLIC_URL
-        sync: false
+        sync: true
       # ---- Secrets: set these in the Render dashboard after first deploy ----
       - key: MONGO_URI
-        sync: false
+        sync: true
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -59,23 +59,23 @@ services:
         value: 7d
       # Seed values (used on first run by `npm run seed`)
       - key: SEED_SUPER_ADMIN_PHONE
-        sync: false
+        sync: true
       - key: SEED_SUPER_ADMIN_PASSWORD
-        sync: false
+        sync: true
       # Arkesel SMS — leave blank for stub mode (OTPs printed to logs)
       - key: ARKESEL_API_KEY
-        sync: false
+        sync: true
       - key: ARKESEL_SENDER_ID
         value: KitchenLuv
       - key: ARKESEL_SANDBOX
         value: "false"
       # Paystack — leave blank for stub mode (auto-success checkout)
       - key: PAYSTACK_SECRET_KEY
-        sync: false
+        sync: true
       - key: PAYSTACK_PUBLIC_KEY
-        sync: false
+        sync: true
       - key: PAYSTACK_WEBHOOK_SECRET
-        sync: false
+        sync: true
       # OTP / bcrypt / rate limits
       - key: OTP_LENGTH
         value: "6"
@@ -124,10 +124,10 @@ services:
       #   VITE_API_URL    = https://kitchen-ecom-api.onrender.com/api
       #   VITE_SOCKET_URL = https://kitchen-ecom-api.onrender.com
       - key: VITE_API_URL
-        sync: false
+        sync: true
       - key: VITE_SOCKET_URL
-        sync: false
+        sync: true
       - key: VITE_PAYSTACK_PUBLIC_KEY
-        sync: false
+        sync: true
       - key: VITE_WHATSAPP_NUMBER
-        sync: false
+        sync: true
