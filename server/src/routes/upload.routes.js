@@ -6,24 +6,22 @@ import { env } from '../config/env.js';
 
 const router = Router();
 
-// Always store a relative `/uploads/<file>` path so the URL stays portable across
-// dev (Vite proxy) and prod (any domain). If frontend and backend live on different
-// origins, set PUBLIC_URL (e.g. https://api.example.com) — it'll be prefixed here.
-function fileUrl(_req, filename) {
-  const relative = `/uploads/${filename}`;
+// When Cloudinary is active, req.file.path is the full CDN URL.
+// When using local disk, we build a relative /uploads/<file> path.
+function fileUrl(req, file) {
+  if (env.cloudinary.enabled) return file.path;
+  const relative = `/uploads/${file.filename}`;
   return env.publicUrl ? `${env.publicUrl}${relative}` : relative;
 }
 
-// Image upload — admins only (product photos, etc.)
 router.post('/', requireAuth, requireRoles(ROLES.ADMIN, ROLES.SUPER_ADMIN), upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-  res.status(201).json({ success: true, url: fileUrl(req, req.file.filename) });
+  res.status(201).json({ success: true, url: fileUrl(req, req.file) });
 });
 
-// Audio upload — any authenticated user (e.g. voice-note reviews)
 router.post('/audio', requireAuth, uploadAudio.single('audio'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-  res.status(201).json({ success: true, url: fileUrl(req, req.file.filename) });
+  res.status(201).json({ success: true, url: fileUrl(req, req.file) });
 });
 
 export default router;

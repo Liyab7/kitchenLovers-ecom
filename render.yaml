@@ -38,6 +38,12 @@ envVarGroups:
         sync: false
       - key: VITE_WHATSAPP_NUMBER
         sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
 
 services:
   - type: web
@@ -99,3 +105,18 @@ services:
       # --- First-run database seeding ----------------------------------------
       - key: AUTO_SEED
         value: "true"
+
+      # --- Origins (Render injects RENDER_EXTERNAL_URL automatically) ----------
+      # CLIENT_URL tells the API which origin(s) are allowed for CORS *and*
+      # where to redirect after payment. fromService.envVarKey injects the
+      # service's own public URL so you never hard-code it.
+      - key: CLIENT_URL
+        fromService:
+          name: kitchenlovers-ecom
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: PUBLIC_URL
+        fromService:
+          name: kitchenlovers-ecom
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
