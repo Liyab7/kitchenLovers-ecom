@@ -44,6 +44,8 @@ envVarGroups:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      - key: CLIENT_URL
+        sync: false
 
 services:
   - type: web
@@ -106,8 +108,6 @@ services:
       - key: AUTO_SEED
         value: "true"
 
-      # --- Origins ---------------------------------------------------------------
-      - key: CLIENT_URL
-        value: https://kitchenlovers-ecom-crqf.onrender.com
+      # --- Origins (set CLIENT_URL in the kitchen-ecom-secrets env group) -------
       - key: PUBLIC_URL
         value: https://kitchenlovers-ecom-crqf.onrender.com
