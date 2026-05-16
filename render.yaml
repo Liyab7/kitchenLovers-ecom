@@ -106,17 +106,8 @@ services:
       - key: AUTO_SEED
         value: "true"
 
-      # --- Origins (Render injects RENDER_EXTERNAL_URL automatically) ----------
-      # CLIENT_URL tells the API which origin(s) are allowed for CORS *and*
-      # where to redirect after payment. fromService.envVarKey injects the
-      # service's own public URL so you never hard-code it.
+      # --- Origins ---------------------------------------------------------------
       - key: CLIENT_URL
-        fromService:
-          name: kitchenlovers-ecom
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://kitchenlovers-ecom-crqf.onrender.com
       - key: PUBLIC_URL
-        fromService:
-          name: kitchenlovers-ecom
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://kitchenlovers-ecom-crqf.onrender.com
