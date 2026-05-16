@@ -13,6 +13,7 @@
     "seed": "node src/utils/seed.js",
     "seed:cats": "node src/utils/seedCategories.js",
     "migrate:uploads": "node src/utils/normalizeUploadUrls.js",
+    "migrate:cloudinary": "node src/utils/migrateImagesToCloudinary.js",
     "migrate:phones": "node src/utils/normalizePhones.js",
     "test": "jest --detectOpenHandles"
   },
