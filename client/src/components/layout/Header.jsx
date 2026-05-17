@@ -17,11 +17,6 @@ import NotificationsMenu from '../common/NotificationsMenu.jsx';
 import AccountMenu from '../common/AccountMenu.jsx';
 import { subscribeInstall, triggerInstall } from '../../services/pwaInstall.js';
 
-function isIos() {
-  if (typeof navigator === 'undefined') return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-}
-
 const PRIMARY_NAV = [
   { to: '/', label: 'Home', end: true, match: { pathname: '/' } },
   { to: '/products', label: 'Shop', match: { pathname: '/products', requireNoParams: true } },
@@ -97,21 +92,8 @@ export default function Header() {
       else if (outcome === 'unavailable') setShowInstallPrompt(true);
       return;
     }
-    if (isIos()) {
-      toast('To install: tap Share, then "Add to Home Screen".', { duration: 5000 });
-      return;
-    }
-    // Chrome/Edge but install prompt hasn't fired yet — guide them through the menu install.
-    const ua = navigator.userAgent;
-    const isEdge = /Edg\//.test(ua);
-    const isChrome = /Chrome\//.test(ua) && !isEdge;
-    const hint = isChrome
-      ? 'Click the ⋮ menu (top right) → "Cast, save, and share" → "Install KitchenLovers".'
-      : isEdge
-      ? 'Click the ⋯ menu (top right) → "Apps" → "Install this site as an app".'
-      : 'Open this site in Chrome or Edge, then use the browser menu → "Install app".';
+    // Native install prompt not available — show the platform-aware instructional modal.
     setShowInstallPrompt(true);
-    toast(hint, { duration: 7000 });
   }
 
   const topLevelCategories = getTopLevelCategories(categories);
@@ -391,7 +373,7 @@ export default function Header() {
       )}
 
       {showInstallPrompt && (
-        <InstallPrompt autoHideMs={0} onClose={() => setShowInstallPrompt(false)} />
+        <InstallPrompt autoHideMs={0} forceShow onClose={() => setShowInstallPrompt(false)} />
       )}
     </header>
   );

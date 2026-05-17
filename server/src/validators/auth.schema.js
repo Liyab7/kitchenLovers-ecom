@@ -40,3 +40,13 @@ export const otpResendSchema = z.object({
 export const refreshSchema = z.object({
   refreshToken: z.string().min(10),
 });
+
+export const forgotPasswordSchema = z.object({
+  phone: phoneField,
+});
+
+export const resetPasswordSchema = z.object({
+  phone: phoneField,
+  code: z.string().min(4).max(8),
+  newPassword: z.string().min(8).max(128),
+});

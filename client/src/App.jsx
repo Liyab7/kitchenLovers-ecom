@@ -28,6 +28,8 @@ import NotFound from './pages/NotFound.jsx';
 import Login from './pages/auth/Login.jsx';
 import Register from './pages/auth/Register.jsx';
 import VerifyOtp from './pages/auth/VerifyOtp.jsx';
+import ForgotPassword from './pages/auth/ForgotPassword.jsx';
+import ResetPassword from './pages/auth/ResetPassword.jsx';
 
 import AdminDashboard from './pages/admin/Dashboard.jsx';
 import AdminProducts from './pages/admin/Products.jsx';
@@ -135,6 +137,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
         <Route element={<ProtectedRoute roles={['rider', 'admin', 'super_admin']}><RiderLayout /></ProtectedRoute>}>

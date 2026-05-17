@@ -8,6 +8,22 @@ import { generateOtp, hashOtp, otpExpiry } from '../utils/otp.js';
 import { sendSMS, SmsTemplates } from '../services/sms.service.js';
 import { env } from '../config/env.js';
 
+async function issueResetCode(user) {
+  const code = generateOtp();
+  user.otpHash = hashOtp(code);
+  user.otpExpiresAt = otpExpiry();
+  user.otpAttempts = 0;
+  await user.save();
+
+  console.log(`[pwreset] ${user.phone} -> ${code} (expires in ${env.otp.expiresMinutes}m)`);
+  try {
+    await sendSMS(user.phone, SmsTemplates.passwordReset(code, env.otp.expiresMinutes));
+  } catch (err) {
+    console.error(`[pwreset] SMS dispatch failed for ${user.phone}:`, err.message);
+  }
+  return code;
+}
+
 function tokensFor(user) {
   const payload = { sub: user._id.toString(), role: user.role };
   return {
@@ -174,4 +190,47 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const me = asyncHandler(async (req, res) => {
   res.json({ success: true, data: req.user.toSafeJSON() });
+});
+
+// --- Password reset --------------------------------------------------------
+// Two-step phone-based reset: request a code, then submit code + new password.
+// We never reveal whether a phone is registered (timing-safe success response).
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+  const user = await User.findOne({ phone, isPhoneVerified: true })
+    .select('+otpHash +otpExpiresAt +otpAttempts');
+  if (user) {
+    await issueResetCode(user);
+  }
+  res.json({
+    success: true,
+    message: 'If an account exists for that phone, a reset code has been sent via SMS.',
+  });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { phone, code, newPassword } = req.body;
+  const user = await User.findOne({ phone })
+    .select('+otpHash +otpExpiresAt +otpAttempts +password');
+  // Generic message regardless of whether user exists / code matches, to avoid enumeration.
+  const fail = () => { throw ApiError.badRequest('Invalid or expired reset code'); };
+  if (!user || !user.isPhoneVerified) fail();
+  if (!user.otpHash || !user.otpExpiresAt) fail();
+  if (user.otpExpiresAt < new Date()) fail();
+  if (user.otpAttempts >= 5) throw ApiError.badRequest('Too many attempts. Request a new code.');
+
+  if (hashOtp(code) !== user.otpHash) {
+    user.otpAttempts += 1;
+    await user.save();
+    fail();
+  }
+
+  user.password = newPassword;        // pre-save hook hashes it
+  user.otpHash = undefined;
+  user.otpExpiresAt = undefined;
+  user.otpAttempts = 0;
+  user.refreshTokenHash = undefined;  // revoke active sessions on password change
+  await user.save();
+
+  res.json({ success: true, message: 'Password reset. Please sign in with your new password.' });
 });

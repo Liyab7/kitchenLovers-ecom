@@ -98,6 +98,8 @@ export async function subscribeContact({ phone, phoneBook, firstName, lastName, 
 
 export const SmsTemplates = {
   otp: (code, minutes) => `Your verification code is ${code}. It expires in ${minutes} minutes.`,
+  passwordReset: (code, minutes) =>
+    `KitchenLovers password reset code: ${code}. Expires in ${minutes} minutes. If you did not request this, ignore.`,
   orderPaid: (orderNumber) => `Payment confirmed for order ${orderNumber}. We're preparing your items.`,
   orderStatus: (orderNumber, status) => `Order ${orderNumber} is now ${status}.`,
 };

@@ -23,8 +23,15 @@ export default defineConfig({
         theme_color: '#FF6B35',
         background_color: '#FFF8F3',
         display: 'standalone',
+        // Older browsers (Samsung Internet, some Android Chrome variants) fall through
+        // this list and pick the first display mode they understand.
+        display_override: ['standalone', 'minimal-ui', 'browser'],
+        orientation: 'portrait',
         start_url: '/',
         scope: '/',
+        lang: 'en',
+        categories: ['shopping', 'lifestyle'],
+        prefer_related_applications: false,
         icons: [
           { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

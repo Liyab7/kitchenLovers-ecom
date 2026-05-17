@@ -26,8 +26,8 @@ const PROMISES = [
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-white border-t border-ink/10 mt-16">
-      <div className="max-w-7xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-12 text-sm">
+    <footer className="bg-white border-t border-ink/10 mt-4 sm:mt-8 pb-16 md:pb-0">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-10 grid gap-6 sm:gap-8 md:grid-cols-12 text-sm">
         <div className="md:col-span-4 space-y-3">
           <Brand size="h-12" />
           <p className="text-ink/65 leading-relaxed">

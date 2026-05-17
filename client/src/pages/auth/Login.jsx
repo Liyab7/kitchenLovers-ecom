@@ -53,7 +53,12 @@ export default function Login() {
       <form onSubmit={submit} className="space-y-3.5">
         <Field icon={FiAtSign} label="Email or phone" name="identifier" required placeholder="0244 000 000  or  email" value={form.identifier} onChange={change} autoComplete="username" />
         <Field icon={FiLock} label="Password" type="password" name="password" required placeholder="Enter your password" value={form.password} onChange={change} autoComplete="current-password" />
-        <button className="btn-primary w-full py-2.5 text-sm rounded-lg inline-flex items-center justify-center gap-2 mt-1" disabled={status === 'loading'}>
+        <div className="text-right -mt-1">
+          <Link to="/forgot-password" className="text-xs text-primary font-semibold no-underline hover:underline">
+            Forgot password?
+          </Link>
+        </div>
+        <button className="btn-primary w-full py-2.5 text-sm rounded-lg inline-flex items-center justify-center gap-2" disabled={status === 'loading'}>
           <FiLogIn /> {status === 'loading' ? 'Signing in...' : 'Sign in'}
         </button>
       </form>

@@ -9,6 +9,8 @@ import {
   otpVerifySchema,
   otpResendSchema,
   refreshSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from '../validators/auth.schema.js';
 
 const router = Router();
@@ -17,6 +19,8 @@ router.post('/register', authLimiter, validate(registerSchema), ctrl.register);
 router.post('/login', authLimiter, validate(loginSchema), ctrl.login);
 router.post('/verify-otp', authLimiter, validate(otpVerifySchema), ctrl.verifyOtp);
 router.post('/resend-otp', otpLimiter, validate(otpResendSchema), ctrl.resendOtp);
+router.post('/forgot-password', otpLimiter, validate(forgotPasswordSchema), ctrl.forgotPassword);
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), ctrl.resetPassword);
 router.post('/refresh', validate(refreshSchema), ctrl.refresh);
 router.post('/logout', requireAuth, ctrl.logout);
 router.get('/me', requireAuth, ctrl.me);
