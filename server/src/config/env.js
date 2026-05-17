@@ -13,22 +13,34 @@ const required = (key, fallback) => {
   return v;
 };
 
+// Accept bare hostnames (from Render fromService.host) or full URLs. In production we
+// upgrade to https://; in dev we leave http:// untouched.
+const normalizeOrigin = (raw) => {
+  const v = String(raw || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v.replace(/\/$/, '');
+  const scheme = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  return `${scheme}://${v}`.replace(/\/$/, '');
+};
+
 // CLIENT_URL can be a comma-separated list of allowed origins (e.g. the static-site URL
 // plus a custom domain). The first entry is treated as the canonical client URL for
-// payment redirects.
+// payment redirects. Entries may be bare hostnames — they'll get the right scheme attached.
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
-  .map((s) => s.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
+
+// PUBLIC_URL prefixes uploaded asset URLs when frontend and backend live on different origins.
+// Falls back to Render's auto-injected RENDER_EXTERNAL_URL so the API discovers its own host.
+const publicUrlRaw = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '';
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 5000),
   clientUrl: allowedOrigins[0],
   allowedOrigins,
-  // PUBLIC_URL prefixes uploaded asset URLs when frontend and backend live on different origins
-  // (e.g. https://api.example.com). Leave blank for same-origin deploys — uploads then use relative URLs.
-  publicUrl: (process.env.PUBLIC_URL || '').replace(/\/$/, ''),
+  publicUrl: normalizeOrigin(publicUrlRaw),
   mongoUri: required('MONGO_URI', 'mongodb://localhost:27017/kitchen_ecom'),
   jwt: {
     accessSecret: required('JWT_ACCESS_SECRET', 'dev_access_secret_change_me'),

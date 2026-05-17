@@ -1,24 +1,55 @@
 # Render Blueprint for Kitchen E-Commerce PWA
 # Docs: https://render.com/docs/blueprint-spec
 #
-# This provisions two services from a single Git repo:
-#   - kitchen-ecom-api    (Node web service, Express + Socket.IO)
-#   - kitchen-ecom-web    (Static site, Vite React PWA)
+# Zero-touch deploy flow:
+#   1. Create an env group named "kitchen-ecom-secrets" in Render dashboard (one time)
+#      and paste these keys (see RENDER.md for values):
+#        - MONGO_URI
+#        - ARKESEL_API_KEY
+#        - SEED_SUPER_ADMIN_PHONE
+#        - SEED_SUPER_ADMIN_PASSWORD
+#        - (optional) PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_WEBHOOK_SECRET
+#        - (optional) VITE_PAYSTACK_PUBLIC_KEY, VITE_WHATSAPP_NUMBER
+#   2. "New +" -> "Blueprint" -> point at this repo. Render reads this file.
+#   3. Both services boot. Cross-URLs (CLIENT_URL on API, VITE_API_HOST on web) are
+#      wired automatically via fromService. The API self-discovers its public URL
+#      from Render's auto-injected RENDER_EXTERNAL_URL.
+#   4. On first boot the API auto-seeds the DB (roles + super admin + sample categories
+#      + storefront setting). Idempotent — safe to re-run on every deploy.
 #
-# After connecting the repo to Render, "New +" -> "Blueprint" and point it at this file.
-# Render will spin both up. You then fill in the secrets marked `sync: false`
-# (MongoDB URI, JWT secrets, Paystack keys, Arkesel keys) in each service's
-# Environment tab. See RENDER.md for the full walkthrough.
+# After this, you never need to touch the dashboard again unless rotating a secret.
+
+envVarGroups:
+  - name: kitchen-ecom-secrets
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: ARKESEL_API_KEY
+        sync: false
+      - key: SEED_SUPER_ADMIN_PHONE
+        sync: false
+      - key: SEED_SUPER_ADMIN_PASSWORD
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: PAYSTACK_WEBHOOK_SECRET
+        sync: false
+      - key: VITE_PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: VITE_WHATSAPP_NUMBER
+        sync: false
 
 services:
   # ----------------------------------------------------------------------
-  # Backend API
+  # Backend API (Express + Socket.IO)
   # ----------------------------------------------------------------------
   - type: web
     name: kitchen-ecom-api
     runtime: node
     plan: starter # Starter or higher is required to attach a disk
-    region: oregon # change if you prefer fra/sgp/etc.
+    region: oregon
     rootDir: server
     buildCommand: npm install --omit=dev
     startCommand: node src/index.js
@@ -29,26 +60,25 @@ services:
       mountPath: /var/data/uploads
       sizeGB: 1
     envVars:
+      # All secrets come from the shared env group — one-time fill in dashboard.
+      - fromGroup: kitchen-ecom-secrets
+
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000 # Render injects PORT; this is a fallback only
       - key: UPLOADS_DIR
         value: /var/data/uploads
-      # CLIENT_URL is the public static-site URL with scheme, e.g.
-      #   https://kitchen-ecom-web.onrender.com
-      # Comma-separated values are supported (add a custom domain later).
-      # Set this manually after the static site's first deploy.
+
+      # CLIENT_URL gets the static site's hostname automatically. env.js prepends
+      # https:// so this works as a CORS origin.
       - key: CLIENT_URL
-        sync: false
-      # PUBLIC_URL is the backend's own public URL (with scheme) — prefixed onto
-      # uploaded image paths so the frontend can load /uploads from a different
-      # origin. Example: https://kitchen-ecom-api.onrender.com
-      - key: PUBLIC_URL
-        sync: true
-      # ---- Secrets: set these in the Render dashboard after first deploy ----
-      - key: MONGO_URI
-        sync: true
+        fromService:
+          name: kitchen-ecom-web
+          type: web
+          property: host
+
+      # PUBLIC_URL is left unset — server falls back to RENDER_EXTERNAL_URL, which
+      # Render auto-injects with the right scheme + host for the API service itself.
+
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -57,26 +87,12 @@ services:
         value: 15m
       - key: JWT_REFRESH_EXPIRES
         value: 7d
-      # Seed values (used on first run by `npm run seed`)
-      - key: SEED_SUPER_ADMIN_PHONE
-        sync: true
-      - key: SEED_SUPER_ADMIN_PASSWORD
-        sync: true
-      # Arkesel SMS — leave blank for stub mode (OTPs printed to logs)
-      - key: ARKESEL_API_KEY
-        sync: true
+
       - key: ARKESEL_SENDER_ID
-        value: KitchenLuv
+        value: KTLovers
       - key: ARKESEL_SANDBOX
         value: "false"
-      # Paystack — leave blank for stub mode (auto-success checkout)
-      - key: PAYSTACK_SECRET_KEY
-        sync: true
-      - key: PAYSTACK_PUBLIC_KEY
-        sync: true
-      - key: PAYSTACK_WEBHOOK_SECRET
-        sync: true
-      # OTP / bcrypt / rate limits
+
       - key: OTP_LENGTH
         value: "6"
       - key: OTP_EXPIRES_MINUTES
@@ -88,8 +104,12 @@ services:
       - key: RATE_LIMIT_MAX
         value: "300"
 
+      # Auto-seed on boot. Idempotent — set to "false" to skip.
+      - key: AUTO_SEED
+        value: "true"
+
   # ----------------------------------------------------------------------
-  # Frontend static site
+  # Frontend static site (Vite React PWA)
   # ----------------------------------------------------------------------
   - type: web
     name: kitchen-ecom-web
@@ -99,8 +119,6 @@ services:
     staticPublishPath: ./dist
     autoDeploy: true
     pullRequestPreviewsEnabled: false
-    # SPA routing: every non-asset path falls back to index.html so client-side
-    # routes (e.g. /admin, /checkout/callback) load the app shell.
     routes:
       - type: rewrite
         source: /*
@@ -119,15 +137,13 @@ services:
         name: Cache-Control
         value: no-cache
     envVars:
-      # Vite reads these at build time. Set both to the API service's public URL
-      # after its first deploy, e.g.:
-      #   VITE_API_URL    = https://kitchen-ecom-api.onrender.com/api
-      #   VITE_SOCKET_URL = https://kitchen-ecom-api.onrender.com
-      - key: VITE_API_URL
-        sync: true
-      - key: VITE_SOCKET_URL
-        sync: true
-      - key: VITE_PAYSTACK_PUBLIC_KEY
-        sync: true
-      - key: VITE_WHATSAPP_NUMBER
-        sync: true
+      # Paystack public key + WhatsApp number pulled from the shared group.
+      - fromGroup: kitchen-ecom-secrets
+
+      # Vite gets the API service's hostname automatically. Client code in
+      # services/api.js + services/socket.js builds the full https URL at build time.
+      - key: VITE_API_HOST
+        fromService:
+          name: kitchen-ecom-api
+          type: web
+          property: host

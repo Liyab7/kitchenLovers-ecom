@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || '/api';
+// Prefer an explicit VITE_API_URL. Otherwise build it from VITE_API_HOST (a bare hostname
+// supplied by Render's fromService cross-reference). Fall back to same-origin /api for dev.
+const apiHost = import.meta.env.VITE_API_HOST;
+const baseURL =
+  import.meta.env.VITE_API_URL ||
+  (apiHost ? `https://${apiHost.replace(/^https?:\/\//, '').replace(/\/$/, '')}/api` : '/api');
 
 export const api = axios.create({ baseURL, withCredentials: true });
 

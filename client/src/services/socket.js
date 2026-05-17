@@ -1,7 +1,10 @@
 import { io } from 'socket.io-client';
 import { getTokens } from './api.js';
 
-const URL = import.meta.env.VITE_SOCKET_URL || '/';
+const apiHost = import.meta.env.VITE_API_HOST;
+const URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (apiHost ? `https://${apiHost.replace(/^https?:\/\//, '').replace(/\/$/, '')}` : '/');
 
 let socket = null;
 

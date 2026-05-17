@@ -15,6 +15,7 @@ import routes from './routes/index.js';
 import { notFound, errorHandler } from './middlewares/error.js';
 import { globalLimiter } from './middlewares/rateLimiters.js';
 import { initSocket } from './services/socket.service.js';
+import { runSeed } from './utils/seed.js';
 
 const app = express();
 
@@ -71,9 +72,20 @@ initSocket(server);
 
 async function start() {
   await connectDB();
+
+  if (String(process.env.AUTO_SEED || 'true').toLowerCase() !== 'false') {
+    try {
+      await runSeed();
+    } catch (err) {
+      console.error('[seed] auto-seed failed (continuing startup):', err.message);
+    }
+  }
+
   server.listen(env.port, () => {
     console.log(`[server] listening on http://localhost:${env.port} (${env.nodeEnv})`);
     console.log(`[server] uploads -> ${UPLOADS_DIR}`);
+    console.log(`[server] public url -> ${env.publicUrl || '(same-origin)'}`);
+    console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
     console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${env.paystack.enabled ? 'live' : 'stub'}`);
   });
 }

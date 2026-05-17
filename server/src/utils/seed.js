@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { connectDB } from '../config/db.js';
 import mongoose from 'mongoose';
+import { connectDB } from '../config/db.js';
 import { User } from '../models/User.js';
 import { Role, ROLES } from '../models/Role.js';
 import { Category } from '../models/Category.js';
@@ -8,9 +8,7 @@ import { Setting } from '../models/Setting.js';
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-async function run() {
-  await connectDB();
-
+export async function runSeed({ log = console.log } = {}) {
   for (const name of Object.values(ROLES)) {
     await Role.updateOne({ name }, { $setOnInsert: { name } }, { upsert: true });
   }
@@ -27,12 +25,11 @@ async function run() {
       role: ROLES.SUPER_ADMIN,
       isPhoneVerified: true,
     });
-    console.log(`[seed] created super admin: ${superPhone} / ${superPass}`);
+    log(`[seed] created super admin: ${superPhone}`);
   } else {
-    console.log(`[seed] super admin already exists: ${superPhone}`);
+    log(`[seed] super admin already exists: ${superPhone}`);
   }
 
-  // Create an Admin user for testing
   const adminPhone = '+20000000000';
   const existingAdmin = await User.findOne({ phone: adminPhone });
   if (!existingAdmin) {
@@ -43,9 +40,9 @@ async function run() {
       role: ROLES.ADMIN,
       isPhoneVerified: true,
     });
-    console.log(`[seed] created admin: ${adminPhone} / ${superPass}`);
+    log(`[seed] created admin: ${adminPhone}`);
   } else {
-    console.log(`[seed] admin already exists: ${adminPhone}`);
+    log(`[seed] admin already exists: ${adminPhone}`);
   }
 
   const categories = ['Cookware', 'Cutlery', 'Bakeware', 'Appliances', 'Storage'];
@@ -71,12 +68,22 @@ async function run() {
     { upsert: true }
   );
 
-  console.log('[seed] done');
-  await mongoose.disconnect();
-  process.exit(0);
+  log('[seed] done');
 }
 
-run().catch((err) => {
-  console.error('[seed] failed', err);
-  process.exit(1);
-});
+const isDirectRun = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`
+  || process.argv[1]?.endsWith('seed.js');
+
+if (isDirectRun) {
+  (async () => {
+    try {
+      await connectDB();
+      await runSeed();
+      await mongoose.disconnect();
+      process.exit(0);
+    } catch (err) {
+      console.error('[seed] failed', err);
+      process.exit(1);
+    }
+  })();
+}
