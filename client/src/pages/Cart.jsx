@@ -30,13 +30,14 @@ export default function Cart() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold inline-flex items-center gap-2">
-          <FiShoppingCart className="text-primary" /> Your cart
-          <span className="badge-muted ml-1">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2 min-w-0">
+          <FiShoppingCart className="text-primary shrink-0" />
+          <span className="truncate">Your cart</span>
+          <span className="badge-muted ml-1 shrink-0">{items.length}</span>
         </h1>
-        <Link to="/products" className="text-sm text-ink/60 hover:text-primary inline-flex items-center gap-1 no-underline">
-          <FiArrowLeft /> Continue shopping
+        <Link to="/products" className="text-sm text-ink/60 hover:text-primary inline-flex items-center gap-1 no-underline whitespace-nowrap shrink-0">
+          <FiArrowLeft /> <span className="hidden sm:inline">Continue shopping</span>
         </Link>
       </div>
 

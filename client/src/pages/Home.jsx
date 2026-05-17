@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   FiTruck, FiShield, FiRefreshCw, FiHeadphones, FiArrowRight, FiGrid, FiChevronRight, FiChevronLeft, FiTag,
 } from 'react-icons/fi';
+import {
+  FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaTiktok, FaWhatsapp,
+} from 'react-icons/fa6';
 import { api } from '../services/api.js';
 import ProductCard from '../components/common/ProductCard.jsx';
 import Loader from '../components/common/Loader.jsx';
@@ -44,8 +47,8 @@ function HeroBanner({ banners }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="grid md:grid-cols-2 min-h-[240px] sm:min-h-[360px] lg:min-h-[420px]">
-        <div className="p-5 sm:p-10 lg:p-14 flex flex-col justify-center gap-3 sm:gap-4 z-10">
+      <div className="relative grid grid-cols-[1.1fr_1fr] md:grid-cols-2 min-h-[220px] sm:min-h-[360px] lg:min-h-[420px]">
+        <div className="p-4 sm:p-10 lg:p-14 flex flex-col justify-center gap-2 sm:gap-4 z-10">
           {eyebrow && (
             <p className="text-primary text-[10px] sm:text-sm font-semibold uppercase tracking-widest">{eyebrow}</p>
           )}
@@ -57,18 +60,18 @@ function HeroBanner({ banners }) {
           </h1>
           <div className="w-10 sm:w-12 h-1 bg-primary rounded-full" />
           {!active.subtitle && (
-            <p className="text-ink/70 text-xs sm:text-base max-w-md">{subtitle}</p>
+            <p className="text-ink/70 text-xs sm:text-base max-w-md line-clamp-2 sm:line-clamp-none">{subtitle}</p>
           )}
           <div className="flex flex-wrap gap-2 sm:gap-3 pt-1 sm:pt-2">
-            <Link to={link} className="btn-primary inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base no-underline">
+            <Link to={link} className="btn-primary inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-base no-underline">
               {cta} <FiArrowRight />
             </Link>
-            <Link to="/products?tag=deals" className="btn-outline inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base no-underline">
+            <Link to="/products?tag=deals" className="btn-outline inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-base no-underline">
               Explore Deals
             </Link>
           </div>
         </div>
-        <div className="relative hidden md:block">
+        <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-primary/15" />
           {list.map((b, i) => {
             const src = b?.imageUrl || (i === 0 ? '/brand/hero.jpg' : null);
@@ -197,6 +200,37 @@ function CategoryCarousel({ categories }) {
   );
 }
 
+const SOCIALS = [
+  { href: 'https://facebook.com/kitchenlovers', label: 'Facebook', Icon: FaFacebookF, color: 'hover:bg-[#1877F2]' },
+  { href: 'https://instagram.com/kitchenlovers', label: 'Instagram', Icon: FaInstagram, color: 'hover:bg-gradient-to-br hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#515BD4]' },
+  { href: 'https://x.com/kitchenlovers', label: 'X (Twitter)', Icon: FaXTwitter, color: 'hover:bg-black' },
+  { href: 'https://youtube.com/@kitchenlovers', label: 'YouTube', Icon: FaYoutube, color: 'hover:bg-[#FF0000]' },
+  { href: 'https://tiktok.com/@kitchenlovers', label: 'TikTok', Icon: FaTiktok, color: 'hover:bg-black' },
+  { href: 'https://wa.me/233551234567', label: 'WhatsApp', Icon: FaWhatsapp, color: 'hover:bg-[#25D366]' },
+];
+
+function SocialIcons() {
+  return (
+    <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-ink/10">
+      <p className="text-center text-xs text-ink/55 mb-3">Follow us on social media</p>
+      <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+        {SOCIALS.map(({ href, label, Icon, color }) => (
+          <a
+            key={label}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label}
+            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border border-ink/10 text-ink/70 hover:text-white hover:border-transparent shadow-sm flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 ${color}`}
+          >
+            <Icon className="text-base sm:text-lg" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PromoCard({ tone = 'green', eyebrow, title, body, ctaLabel, ctaLink, image }) {
   const palette = {
     green: 'bg-emerald-50',
@@ -290,16 +324,14 @@ export default function Home() {
     <div className="space-y-10 sm:space-y-12">
       <HeroBanner banners={heroBanners} />
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <section className="grid grid-cols-4 gap-2 sm:gap-4">
         {TRUST.map(({ Icon, title, body }) => (
-          <div key={title} className="card p-4 flex items-center gap-3">
-            <div className="text-primary text-2xl shrink-0 bg-primary/5 rounded-xl w-11 h-11 flex items-center justify-center">
+          <div key={title} className="card p-2.5 sm:p-4 flex flex-col items-center text-center gap-1.5 sm:gap-2">
+            <div className="text-primary text-xl sm:text-2xl bg-primary/10 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center">
               <Icon />
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-sm">{title}</p>
-              <p className="text-xs text-ink/60 truncate">{body}</p>
-            </div>
+            <p className="font-semibold text-[11px] sm:text-sm leading-tight">{title}</p>
+            <p className="text-[10px] sm:text-xs text-ink/60 leading-tight">{body}</p>
           </div>
         ))}
       </section>
@@ -339,7 +371,15 @@ export default function Home() {
               View all <FiChevronRight />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* Mobile: horizontal snap-scroll. Desktop: grid. */}
+          <div className="sm:hidden -mx-3 px-3 flex gap-3 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {bestSellerList.slice(0, 8).map((p) => (
+              <div key={p._id} className="snap-start shrink-0 w-[42%]">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:grid grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {bestSellerList.slice(0, 8).map((p) => <ProductCard key={p._id} product={p} />)}
           </div>
         </section>
@@ -353,21 +393,35 @@ export default function Home() {
               View all <FiChevronRight />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {newArrivals.map((p) => <ProductCard key={p._id} product={p} />)}
+          <div className="sm:hidden -mx-3 px-3 flex gap-3 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {newArrivals.map((p) => (
+              <div key={p._id} className="snap-start shrink-0 w-[42%]">
+                <ProductCard product={p} hideNewBadge />
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:grid grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {newArrivals.map((p) => <ProductCard key={p._id} product={p} hideNewBadge />)}
           </div>
         </section>
       )}
 
-      <section className="card p-6 sm:p-8 bg-gradient-to-r from-primary/5 via-white to-primary/5 text-center">
-        <p className="text-primary text-[11px] uppercase tracking-widest font-semibold">Stay Updated</p>
-        <h2 className="text-xl sm:text-2xl font-extrabold mt-1">Join our newsletter</h2>
-        <p className="text-ink/60 text-sm mt-1 max-w-md mx-auto">
-          Subscribe to get special offers, free recipes and new product updates.
-        </p>
+      <section className="card p-5 sm:p-8 bg-gradient-to-r from-primary/5 via-white to-primary/5">
+        <div className="sm:text-center flex items-start gap-3 sm:block">
+          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 sm:hidden">
+            <FiTag />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-primary text-[11px] uppercase tracking-widest font-semibold hidden sm:block">Stay Updated</p>
+            <h2 className="text-base sm:text-2xl font-extrabold sm:mt-1">Stay Updated</h2>
+            <p className="text-ink/60 text-xs sm:text-sm sm:mt-1 sm:max-w-md sm:mx-auto">
+              Subscribe to get special offers, free recipes and new product updates.
+            </p>
+          </div>
+        </div>
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="mt-4 flex flex-col sm:flex-row gap-2 max-w-md mx-auto"
+          className="mt-3 sm:mt-4 flex flex-row gap-2 sm:max-w-md sm:mx-auto"
         >
           <input
             type="email"
@@ -375,8 +429,9 @@ export default function Home() {
             className="input flex-1"
             aria-label="Email address"
           />
-          <button type="submit" className="btn-primary px-6">Subscribe</button>
+          <button type="submit" className="btn-primary px-4 sm:px-6 shrink-0">Subscribe</button>
         </form>
+        <SocialIcons />
       </section>
     </div>
   );

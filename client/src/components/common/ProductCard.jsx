@@ -7,7 +7,7 @@ import { addItem } from '../../store/slices/cartSlice.js';
 import { addToWishlistThunk, removeFromWishlistThunk } from '../../store/slices/wishlistSlice.js';
 import { fmt } from '../../utils/format.js';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, hideNewBadge = false }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((s) => s.auth.user);
@@ -47,7 +47,7 @@ export default function ProductCard({ product }) {
       className="card overflow-hidden flex flex-col group relative no-underline text-ink hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     >
       <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-        {isNew && <span className="badge-success">New</span>}
+        {isNew && !hideNewBadge && <span className="badge-success">New</span>}
         {out && <span className="badge-muted">Sold out</span>}
       </div>
 

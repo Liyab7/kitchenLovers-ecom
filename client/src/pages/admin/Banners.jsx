@@ -192,7 +192,7 @@ export default function AdminBanners() {
                 )}
                 <p className="text-xs text-ink/50">PNG or JPG, up to 5MB. Landscape orientation displays best.</p>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="Or paste an image URL"
                   className="input text-sm"
                   value={form.imageUrl}

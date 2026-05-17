@@ -151,7 +151,7 @@ export default function ProductDetail() {
           </>
         )}
         <FiChevronRight className="opacity-60" />
-        <span className="text-ink/80 truncate max-w-[40ch]">{product.name}</span>
+        <span className="text-ink/80 truncate max-w-[18ch] sm:max-w-[40ch]">{product.name}</span>
       </nav>
 
       {/* Main: image + buy box */}
@@ -229,25 +229,31 @@ export default function ProductDetail() {
                 <button
                   onClick={add}
                   disabled={out}
-                  className="btn-outline py-3 inline-flex items-center justify-center gap-2 border-primary text-primary hover:bg-primary/5"
+                  className="btn-outline py-3 inline-flex items-center justify-center gap-1.5 sm:gap-2 border-primary text-primary hover:bg-primary/5 text-xs sm:text-sm whitespace-nowrap"
                 >
-                  <FiShoppingCart /> Add to cart
+                  <FiShoppingCart className="shrink-0" /> Add to cart
                 </button>
                 <button
                   onClick={buyNow}
                   disabled={out}
-                  className="btn-primary py-3 inline-flex items-center justify-center gap-2"
+                  className="btn-primary py-3 inline-flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
-                  <FiZap /> Buy now
+                  <FiZap className="shrink-0" /> Buy now
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="card p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-ink/70">
-            <div className="inline-flex items-center gap-2"><FiTruck className="text-primary text-lg" /> Fast delivery</div>
-            <div className="inline-flex items-center gap-2"><FiShield className="text-primary text-lg" /> Secure payment</div>
-            <div className="inline-flex items-center gap-2"><FiRefreshCw className="text-primary text-lg" /> 7-day returns</div>
+          <div className="card p-3 sm:p-4 grid grid-cols-3 gap-2 sm:gap-3 text-[11px] sm:text-xs text-ink/70">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 text-center sm:text-left">
+              <FiTruck className="text-primary text-lg shrink-0" /> Fast delivery
+            </div>
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 text-center sm:text-left">
+              <FiShield className="text-primary text-lg shrink-0" /> Secure payment
+            </div>
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 text-center sm:text-left">
+              <FiRefreshCw className="text-primary text-lg shrink-0" /> 7-day returns
+            </div>
           </div>
         </div>
       </div>

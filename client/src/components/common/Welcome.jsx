@@ -73,7 +73,7 @@ export default function Welcome({ onDismiss }) {
   return (
     <div className="fixed inset-0 z-[60] bg-ink/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div className="card max-w-md w-full overflow-hidden bg-white">
-        <div className="relative h-40 bg-gradient-to-br from-primary via-primary-600 to-primary-700 flex items-center justify-center overflow-hidden">
+        <div className="relative h-52 sm:h-60 bg-gradient-to-br from-primary via-primary-600 to-primary-700 flex items-center justify-center overflow-hidden">
           {bgImage && (
             <img
               src={bgImage}

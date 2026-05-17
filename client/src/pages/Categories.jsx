@@ -39,7 +39,7 @@ export default function Categories() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl inline-flex items-center gap-2"><FiFolder className="text-primary" /> All categories</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2"><FiFolder className="text-primary" /> All categories</h1>
         <div className="relative max-w-xs w-full">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
           <input

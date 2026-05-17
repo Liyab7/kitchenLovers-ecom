@@ -118,4 +118,16 @@
   /* Hide scrollbar utility (already used in mobile bottom nav) */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; }
+
+  /* Marquee: duplicates content twice, translates by 50% for seamless loop */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+  .marquee:hover { animation-play-state: paused; }
 }

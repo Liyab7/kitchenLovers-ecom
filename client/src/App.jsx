@@ -102,7 +102,11 @@ export default function App() {
     });
     socket.on('order:paid', (o) => toast.success(`Order ${o.orderNumber} paid`));
     socket.on('order:new', (o) => toast(`New order: ${o.orderNumber}`));
-    return () => socket.off('notification:new');
+    return () => {
+      socket.off('notification:new');
+      socket.off('order:paid');
+      socket.off('order:new');
+    };
   }, [user, authStatus, dispatch, navigate]);
 
   return (

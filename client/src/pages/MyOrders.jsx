@@ -41,7 +41,7 @@ export default function MyOrders() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold inline-flex items-center gap-2">
+      <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2">
         <FiPackage className="text-primary" /> My orders
       </h1>
       <div className="card divide-y divide-ink/10">
@@ -49,20 +49,23 @@ export default function MyOrders() {
           <Link
             key={o._id}
             to={`/orders/${o._id}`}
-            className="p-4 flex justify-between items-center gap-4 no-underline text-ink hover:bg-ink/[0.015] transition"
+            className="p-3 sm:p-4 flex justify-between items-center gap-3 sm:gap-4 no-underline text-ink hover:bg-ink/[0.015] transition"
           >
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{o.orderNumber}</p>
-              <p className="text-xs text-ink/55 mt-0.5">
-                {new Date(o.createdAt).toLocaleDateString()} · {o.items.length} {o.items.length === 1 ? 'item' : 'items'}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold truncate text-sm sm:text-base">{o.orderNumber}</p>
+              <p className="text-[11px] sm:text-xs text-ink/55 mt-0.5 flex flex-wrap items-center gap-x-2">
+                <span>{new Date(o.createdAt).toLocaleDateString()}</span>
+                <span className="hidden sm:inline">·</span>
+                <span>{o.items.length} {o.items.length === 1 ? 'item' : 'items'}</span>
+                <span className={`${statusBadge(o.status)} sm:hidden`}>{o.status}</span>
               </p>
             </div>
-            <div className="text-right flex items-center gap-4 shrink-0">
+            <div className="text-right flex items-center gap-2 sm:gap-4 shrink-0">
               <div>
-                <span className={statusBadge(o.status)}>{o.status}</span>
-                <p className="text-sm font-semibold mt-1 tabular-nums">{fmt(o.total, o.currency)}</p>
+                <span className={`${statusBadge(o.status)} hidden sm:inline-flex`}>{o.status}</span>
+                <p className="text-sm font-semibold mt-1 tabular-nums whitespace-nowrap">{fmt(o.total, o.currency)}</p>
               </div>
-              <FiArrowRight className="text-ink/35" />
+              <FiArrowRight className="text-ink/35 shrink-0" />
             </div>
           </Link>
         ))}

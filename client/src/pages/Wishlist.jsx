@@ -16,7 +16,7 @@ export default function Wishlist() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl inline-flex items-center gap-2">
+      <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2">
         <FiHeart className="text-primary" /> My wishlist
       </h1>
 

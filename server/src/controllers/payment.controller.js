@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { Payment, PAYMENT_STATUS } from '../models/Payment.js';
 import { Order, ORDER_STATUS } from '../models/Order.js';
 import { verifyTransaction, verifyWebhookSignature } from '../services/paystack.service.js';
+import { env } from '../config/env.js';
 import { notifyUser, notifyAdmins } from '../services/notification.service.js';
 import { sendSMS, SmsTemplates } from '../services/sms.service.js';
 import { sendEmail, EmailTemplates } from '../services/email.service.js';
@@ -83,8 +84,13 @@ export const verifyPayment = asyncHandler(async (req, res) => {
 export const paystackWebhook = asyncHandler(async (req, res) => {
   const signature = req.headers['x-paystack-signature'];
   const raw = req.rawBody?.toString() || JSON.stringify(req.body);
-  if (signature && !verifyWebhookSignature(raw, signature)) {
-    throw ApiError.unauthorized('Invalid signature');
+
+  // In live mode (Paystack configured), a valid signature is mandatory. Stub mode skips
+  // verification so local testing without webhook secrets stays usable.
+  if (env.paystack.enabled && env.paystack.webhookSecret) {
+    if (!signature || !verifyWebhookSignature(raw, signature)) {
+      throw ApiError.unauthorized('Invalid or missing webhook signature');
+    }
   }
 
   const event = req.body?.event;

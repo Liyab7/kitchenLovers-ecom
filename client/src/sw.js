@@ -13,6 +13,10 @@ const sw = /** @type {ServiceWorkerGlobalScope} */ (self);
 precacheAndRoute(self.__WB_MANIFEST || []);
 cleanupOutdatedCaches();
 
+// Explicit no-op fetch listener — some Chrome installability checks look for a
+// top-level fetch handler, separate from Workbox's internal routing.
+sw.addEventListener('fetch', () => {});
+
 // Navigation fallback for SPA routes
 registerRoute(new NavigationRoute(async ({ event }) => {
   try { return await fetch(event.request); }

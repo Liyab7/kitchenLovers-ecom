@@ -121,10 +121,10 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <h1 className="text-2xl font-extrabold inline-flex items-center gap-2"><FiUser className="text-primary" /> My account</h1>
+      <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2"><FiUser className="text-primary" /> My account</h1>
 
       {/* Quick links — most-used customer actions */}
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
           { to: '/orders', label: 'My orders', Icon: FiPackage },
           { to: '/wishlist', label: 'Wishlist', Icon: FiHeart },
@@ -133,13 +133,13 @@ export default function Profile() {
           <Link
             key={to}
             to={to}
-            className="card p-4 no-underline text-ink hover:shadow-md hover:-translate-y-0.5 transition flex flex-col items-start gap-2"
+            className="card p-3 sm:p-4 no-underline text-ink hover:shadow-md hover:-translate-y-0.5 transition flex flex-col items-start gap-1.5 sm:gap-2"
           >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <Icon />
             </div>
-            <p className="font-semibold text-sm">{label}</p>
-            <p className="text-[11px] text-primary inline-flex items-center gap-1">View <FiArrowRight className="text-[10px]" /></p>
+            <p className="font-semibold text-xs sm:text-sm leading-tight">{label}</p>
+            <p className="text-[10px] sm:text-[11px] text-primary inline-flex items-center gap-1">View <FiArrowRight className="text-[10px]" /></p>
           </Link>
         ))}
       </section>

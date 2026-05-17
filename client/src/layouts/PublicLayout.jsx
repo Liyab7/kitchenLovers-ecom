@@ -2,7 +2,6 @@ import { Outlet } from 'react-router-dom';
 import Header from '../components/layout/Header.jsx';
 import Footer from '../components/layout/Footer.jsx';
 import MobileBottomNav from '../components/layout/MobileBottomNav.jsx';
-import WhatsAppWidget from '../components/common/WhatsAppWidget.jsx';
 import InstallPrompt from '../components/common/InstallPrompt.jsx';
 
 export default function PublicLayout() {
@@ -14,7 +13,6 @@ export default function PublicLayout() {
       </main>
       <Footer />
       <MobileBottomNav />
-      <WhatsAppWidget />
       <InstallPrompt />
     </div>
   );

@@ -101,35 +101,58 @@ export default function Header() {
       toast('To install: tap Share, then "Add to Home Screen".', { duration: 5000 });
       return;
     }
+    // Chrome/Edge but install prompt hasn't fired yet — guide them through the menu install.
+    const ua = navigator.userAgent;
+    const isEdge = /Edg\//.test(ua);
+    const isChrome = /Chrome\//.test(ua) && !isEdge;
+    const hint = isChrome
+      ? 'Click the ⋮ menu (top right) → "Cast, save, and share" → "Install KitchenLovers".'
+      : isEdge
+      ? 'Click the ⋯ menu (top right) → "Apps" → "Install this site as an app".'
+      : 'Open this site in Chrome or Edge, then use the browser menu → "Install app".';
     setShowInstallPrompt(true);
-    toast('Open this site in Chrome/Edge to install, or use your browser menu → "Install app".', { duration: 5000 });
+    toast(hint, { duration: 7000 });
   }
 
   const topLevelCategories = getTopLevelCategories(categories);
-  const selectedCategoryName =
-    categoryId === '' ? 'All categories' : (categories.find((c) => c._id === categoryId)?.name || 'All categories');
 
   return (
     <header className="bg-white border-b border-ink/10 sticky top-0 z-30 shadow-sm">
-      {/* Utility top bar */}
-      <div className="bg-primary/5 border-b border-primary/10 text-[12px] text-ink/75">
-        <div className="max-w-7xl mx-auto px-4 h-9 flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-2 whitespace-nowrap">
-            <FiTruck className="text-primary" />
-            Free shipping on orders over $50
-          </span>
-          <span className="hidden sm:inline text-ink/60">
-            Welcome to KitchenLovers.store <span className="text-primary">♥</span>
-          </span>
-          <span className="hidden md:inline-flex items-center gap-3 text-ink/60">
-            <Link to="/orders" className="no-underline hover:text-primary inline-flex items-center gap-1">
-              <FiTruck /> Track Order
-            </Link>
-            <span className="text-ink/30">|</span>
-            <Link to="/contact" className="no-underline hover:text-primary inline-flex items-center gap-1">
-              <FiHeadphones /> Help &amp; Support
-            </Link>
-          </span>
+      {/* Utility top bar — marquee. Mobile: shipping only. Desktop: full set. */}
+      <div className="bg-primary text-white text-[12px] overflow-hidden h-9 flex items-center">
+        {/* Mobile marquee: shipping notice only. Two halves, each half = 4 copies, total = 8. */}
+        <div className="marquee md:hidden">
+          {Array.from({ length: 2 }).map((_, half) => (
+            <div key={half} className="flex shrink-0">
+              {Array.from({ length: 4 }).map((__, i) => (
+                <span key={i} className="inline-flex items-center gap-2 pr-12 whitespace-nowrap">
+                  <FiTruck className="text-white" />
+                  Free shipping on orders over $50
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+        {/* Desktop marquee: full set. */}
+        <div className="marquee hidden md:flex">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="inline-flex items-center gap-8 pr-12 whitespace-nowrap">
+              <span className="inline-flex items-center gap-2">
+                <FiTruck className="text-white" />
+                Free shipping on orders over $50
+              </span>
+              <span className="inline-flex items-center gap-1">
+                Welcome to KitchenLovers.store <span aria-hidden="true">♥</span>
+              </span>
+              <Link to="/orders" className="no-underline text-white hover:text-white/80 inline-flex items-center gap-1">
+                <FiTruck /> Track Order
+              </Link>
+              <span className="text-white/40">|</span>
+              <Link to="/contact" className="no-underline text-white hover:text-white/80 inline-flex items-center gap-1">
+                <FiHeadphones /> Help &amp; Support
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -145,7 +168,7 @@ export default function Header() {
         </button>
 
         <Link to="/" className="no-underline shrink-0">
-          <Brand size="h-12" />
+          <Brand size="h-9 sm:h-11" />
         </Link>
 
         {/* Search */}
@@ -218,7 +241,7 @@ export default function Header() {
               </Link>
               <Link
                 to="/register"
-                className="btn-primary text-sm py-2 px-4 sm:px-5 no-underline inline-flex items-center gap-1.5 rounded-full"
+                className="btn-primary text-sm py-2 px-3 sm:px-5 no-underline inline-flex items-center gap-1.5 rounded-full whitespace-nowrap"
               >
                 <FiUserPlus className="sm:hidden" />
                 <span>Sign up</span>
@@ -226,6 +249,33 @@ export default function Header() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Mobile-only search row (always visible under header) */}
+      <div className="md:hidden px-4 pb-3">
+        <form
+          onSubmit={submitSearch}
+          className="flex items-stretch border border-ink/15 rounded-lg overflow-hidden bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition"
+        >
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for products, categories..."
+              className="w-full pl-9 pr-3 py-2.5 outline-none text-sm bg-transparent"
+              aria-label="Search products"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-primary hover:bg-primary-600 text-white px-4 inline-flex items-center justify-center"
+            aria-label="Search"
+          >
+            <FiSearch className="text-lg" />
+          </button>
+        </form>
       </div>
 
       {/* Nav bar with All Categories + Install App */}

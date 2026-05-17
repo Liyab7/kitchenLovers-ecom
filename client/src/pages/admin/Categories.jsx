@@ -239,7 +239,7 @@ export default function AdminCategories() {
                 )}
                 <p className="text-xs text-ink/50">PNG or JPG, up to 5MB. Square images work best — they show on the storefront category grid.</p>
                 <input
-                  type="url"
+                  type="text"
                   placeholder="Or paste an image URL"
                   className="input text-sm"
                   value={form.image}

@@ -45,14 +45,19 @@ export async function runSeed({ log = console.log } = {}) {
     log(`[seed] admin already exists: ${adminPhone}`);
   }
 
-  const categories = ['Cookware', 'Cutlery', 'Bakeware', 'Appliances', 'Storage'];
-  for (let i = 0; i < categories.length; i++) {
-    const name = categories[i];
-    await Category.updateOne(
-      { slug: slug(name) },
-      { $setOnInsert: { name, slug: slug(name), sortOrder: i } },
-      { upsert: true }
-    );
+  // Only seed default categories on a brand-new database. Once the admin has
+  // customized the catalog (added/deleted any category), respect those edits
+  // and stop re-creating defaults on every restart.
+  const existingCount = await Category.estimatedDocumentCount();
+  if (existingCount === 0) {
+    const categories = ['Cookware', 'Cutlery', 'Bakeware', 'Appliances', 'Storage'];
+    for (let i = 0; i < categories.length; i++) {
+      const name = categories[i];
+      await Category.create({ name, slug: slug(name), sortOrder: i });
+    }
+    log(`[seed] inserted ${categories.length} default categories (first-run)`);
+  } else {
+    log(`[seed] categories present (${existingCount}) — skipping default seed`);
   }
 
   await Setting.updateOne(

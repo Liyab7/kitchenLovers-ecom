@@ -87,7 +87,7 @@ export default function Products() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl inline-flex items-center gap-2"><FiGrid className="text-primary" /> {pageTitle}</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold inline-flex items-center gap-2 min-w-0"><FiGrid className="text-primary shrink-0" /> <span className="truncate">{pageTitle}</span></h1>
         {(tag || q || params.has('sort') || category) && (
           <button
             type="button"

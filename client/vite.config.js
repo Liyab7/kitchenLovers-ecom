@@ -14,7 +14,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,jpg,png,webp,ico,woff2}'],
       },
       injectRegister: 'auto',
-      includeAssets: ['brand/logo.jpg', 'robots.txt'],
+      includeAssets: ['brand/logo.jpg', 'brand/icon-192.png', 'brand/icon-512.png', 'brand/icon-maskable-512.png', 'robots.txt'],
+      devOptions: { enabled: true, type: 'module' },
       manifest: {
         name: 'KitchenLovers Cookwares',
         short_name: 'KitchenLovers',
@@ -23,9 +24,11 @@ export default defineConfig({
         background_color: '#FFF8F3',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
         icons: [
-          { src: '/brand/logo.jpg', sizes: '512x512', type: 'image/jpeg' },
-          { src: '/brand/logo.jpg', sizes: '192x192', type: 'image/jpeg' },
+          { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/brand/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
