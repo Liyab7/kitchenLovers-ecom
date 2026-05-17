@@ -1,23 +1,24 @@
-# Render Blueprint for Kitchen E-Commerce PWA
+# Render Blueprint for Kitchen E-Commerce PWA — single-service deployment
 # Docs: https://render.com/docs/blueprint-spec
 #
-# Zero-touch deploy flow:
-#   1. Create an env group named "kitchen-ecom-secrets" in Render dashboard (one time)
-#      and paste these keys (see RENDER.md for values):
+# This deploys ONE web service that:
+#   - Builds the React PWA (client/dist)
+#   - Runs the Express API
+#   - Serves the built frontend at the same origin as the API
+# Result: both frontend and backend live at https://<service>.onrender.com.
+# Frontend → backend calls use relative /api, so no CORS config is needed.
+#
+# Setup:
+#   1. Create env group "kitchen-ecom-secrets" in Render dashboard and fill:
 #        - MONGO_URI
 #        - ARKESEL_API_KEY
 #        - SEED_SUPER_ADMIN_PHONE
 #        - SEED_SUPER_ADMIN_PASSWORD
 #        - (optional) PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_WEBHOOK_SECRET
 #        - (optional) VITE_PAYSTACK_PUBLIC_KEY, VITE_WHATSAPP_NUMBER
-#   2. "New +" -> "Blueprint" -> point at this repo. Render reads this file.
-#   3. Both services boot. Cross-URLs (CLIENT_URL on API, VITE_API_HOST on web) are
-#      wired automatically via fromService. The API self-discovers its public URL
-#      from Render's auto-injected RENDER_EXTERNAL_URL.
-#   4. On first boot the API auto-seeds the DB (roles + super admin + sample categories
-#      + storefront setting). Idempotent — safe to re-run on every deploy.
-#
-# After this, you never need to touch the dashboard again unless rotating a secret.
+#   2. Dashboard → New → Blueprint → point at this repo.
+#   3. Done. The build installs both workspaces, builds the client, and the
+#      server serves everything.
 
 envVarGroups:
   - name: kitchen-ecom-secrets
@@ -42,17 +43,14 @@ envVarGroups:
         sync: false
 
 services:
-  # ----------------------------------------------------------------------
-  # Backend API (Express + Socket.IO)
-  # ----------------------------------------------------------------------
   - type: web
-    name: kitchen-ecom-api
+    name: kitchenlovers-ecom
     runtime: node
     plan: starter # Starter or higher is required to attach a disk
     region: oregon
-    rootDir: server
-    buildCommand: npm install --omit=dev
-    startCommand: node src/index.js
+    # Run from repo root so npm workspaces resolves both server and client.
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
     disk:
@@ -60,24 +58,12 @@ services:
       mountPath: /var/data/uploads
       sizeGB: 1
     envVars:
-      # All secrets come from the shared env group — one-time fill in dashboard.
       - fromGroup: kitchen-ecom-secrets
 
       - key: NODE_ENV
         value: production
       - key: UPLOADS_DIR
         value: /var/data/uploads
-
-      # CLIENT_URL gets the static site's hostname automatically. env.js prepends
-      # https:// so this works as a CORS origin.
-      - key: CLIENT_URL
-        fromService:
-          name: kitchen-ecom-web
-          type: web
-          property: host
-
-      # PUBLIC_URL is left unset — server falls back to RENDER_EXTERNAL_URL, which
-      # Render auto-injects with the right scheme + host for the API service itself.
 
       - key: JWT_ACCESS_SECRET
         generateValue: true
@@ -107,43 +93,3 @@ services:
       # Auto-seed on boot. Idempotent — set to "false" to skip.
       - key: AUTO_SEED
         value: "true"
-
-  # ----------------------------------------------------------------------
-  # Frontend static site (Vite React PWA)
-  # ----------------------------------------------------------------------
-  - type: web
-    name: kitchen-ecom-web
-    runtime: static
-    rootDir: client
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    autoDeploy: true
-    pullRequestPreviewsEnabled: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /sw.js
-        name: Cache-Control
-        value: no-cache
-    envVars:
-      # Paystack public key + WhatsApp number pulled from the shared group.
-      - fromGroup: kitchen-ecom-secrets
-
-      # Vite gets the API service's hostname automatically. Client code in
-      # services/api.js + services/socket.js builds the full https URL at build time.
-      - key: VITE_API_HOST
-        fromService:
-          name: kitchen-ecom-api
-          type: web
-          property: host

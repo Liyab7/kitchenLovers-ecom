@@ -1,4 +1,7 @@
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -16,6 +19,11 @@ import { notFound, errorHandler } from './middlewares/error.js';
 import { globalLimiter } from './middlewares/rateLimiters.js';
 import { initSocket } from './services/socket.service.js';
 import { runSeed } from './utils/seed.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// client/dist sits at ../../client/dist relative to server/src/
+const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
+const hasClientBuild = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));
 
 const app = express();
 
@@ -64,17 +72,36 @@ app.use(
 
 app.use('/api', routes);
 
-// Root probe — Render (and uptime monitors) hit `/` to check the service is alive.
-// Without this, every probe logs a 404. Reply with a lightweight JSON banner.
-app.get('/', (_req, res) => {
-  res.json({
-    service: 'kitchen-ecom-api',
-    status: 'ok',
-    docs: '/api/health',
-    time: new Date().toISOString(),
+// Serve the built React PWA (single-service deploy: API + frontend on same origin).
+// If client/dist was built during deploy, mount it; SPA routes fall back to index.html.
+// Falls through to the API-only JSON banner when no build is present (dev mode).
+if (hasClientBuild) {
+  app.use(express.static(CLIENT_DIST, {
+    maxAge: '30d',
+    index: false, // we serve index.html via the SPA fallback below
+    setHeaders: (res, filePath) => {
+      // Service worker must always re-validate so updates roll out promptly.
+      if (filePath.endsWith('sw.js') || filePath.endsWith('sw.mjs')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+    res.sendFile(path.join(CLIENT_DIST, 'index.html'));
   });
-});
-app.head('/', (_req, res) => res.sendStatus(200));
+} else {
+  // No frontend build present — keep the lightweight JSON banner for probes.
+  app.get('/', (_req, res) => {
+    res.json({
+      service: 'kitchen-ecom-api',
+      status: 'ok',
+      docs: '/api/health',
+      time: new Date().toISOString(),
+    });
+  });
+  app.head('/', (_req, res) => res.sendStatus(200));
+}
 
 app.use(notFound);
 app.use(errorHandler);
@@ -97,10 +124,8 @@ async function start() {
     console.log(`[server] listening on http://localhost:${env.port} (${env.nodeEnv})`);
     console.log(`[server] uploads -> ${UPLOADS_DIR}`);
     console.log(`[server] public url -> ${env.publicUrl || '(same-origin)'}`);
+    console.log(`[server] frontend -> ${hasClientBuild ? `serving ${CLIENT_DIST}` : 'API only (no client/dist found)'}`);
     console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
-    if (env.nodeEnv === 'production' && env.allowedOrigins.length === 1 && env.allowedOrigins[0].startsWith('http://localhost')) {
-      console.warn('[server] WARNING: CLIENT_URL is unset in production — CORS will block your frontend. Set CLIENT_URL to your web app origin (e.g. https://your-site.onrender.com).');
-    }
     console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${env.paystack.enabled ? 'live' : 'stub'}`);
   });
 }
