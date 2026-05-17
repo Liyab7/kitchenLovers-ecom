@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react';
-import { FiSend, FiMessageSquare, FiUsers, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import { FiSend, FiMessageSquare, FiUsers, FiAlertTriangle, FiCheckCircle, FiZap } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api.js';
 import { useConfirm } from '../../components/common/ConfirmDialog.jsx';
 
 const MAX_LENGTH = 480;
+
+const TEMPLATES = [
+  {
+    label: 'Brand intro',
+    body: 'KITCHENLOVERS 🔥\nQuality kitchen appliances at affordable prices.\nVisit kitchenlovers.store\nHotline: 0551234567',
+  },
+  {
+    label: 'Welcome',
+    body: 'Welcome to KITCHENLOVERS 🛒\nShop trusted kitchen essentials today.\nVisit kitchenlovers.store\nHotline: 0551234567',
+  },
+  {
+    label: 'Flash sale',
+    body: 'FLASH SALE ⚡\nGet amazing kitchen deals today.\nVisit kitchenlovers.store\nHotline: 0551234567',
+  },
+];
 
 export default function SmsBroadcast() {
   const [message, setMessage] = useState('');
@@ -89,6 +104,34 @@ export default function SmsBroadcast() {
       </div>
 
       <form onSubmit={submit} className="card p-5 space-y-4">
+        <div>
+          <label className="text-xs uppercase tracking-wide text-ink/50 mb-1.5 block inline-flex items-center gap-1.5">
+            <FiZap className="text-primary" /> Quick templates
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => setMessage(t.body)}
+                className="text-xs px-3 py-1.5 rounded-full border border-ink/15 hover:border-primary hover:bg-primary/5 transition"
+                title={t.body}
+              >
+                {t.label}
+              </button>
+            ))}
+            {message && (
+              <button
+                type="button"
+                onClick={() => setMessage('')}
+                className="text-xs px-3 py-1.5 rounded-full border border-ink/10 text-ink/60 hover:text-danger hover:border-danger/40 transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className="text-xs uppercase tracking-wide text-ink/50 mb-1.5 block">
             Message
