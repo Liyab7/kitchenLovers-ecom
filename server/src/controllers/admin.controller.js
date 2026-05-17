@@ -10,6 +10,7 @@ import { Notification } from '../models/Notification.js';
 import { PushSubscription } from '../models/PushSubscription.js';
 import { SavedCard } from '../models/SavedCard.js';
 import { SearchQuery } from '../models/SearchQuery.js';
+import { sendSMS } from '../services/sms.service.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const daysAgo = (n) => new Date(Date.now() - n * 86400000);
@@ -218,6 +219,95 @@ export const salesReport = asyncHandler(async (req, res) => {
   ]);
 
   res.json({ success: true, data: { from, to, rows } });
+});
+
+const MAX_SMS_LENGTH = 480;
+
+function buildBroadcastFilter({ onlyVerified, onlyActive }) {
+  const filter = { role: ROLES.CLIENT, phone: { $exists: true, $ne: '' } };
+  if (onlyActive !== false) filter.isActive = { $ne: false };
+  if (onlyVerified) filter.isPhoneVerified = true;
+  return filter;
+}
+
+export const previewSmsBroadcast = asyncHandler(async (req, res) => {
+  const onlyVerified = String(req.query.onlyVerified ?? 'false') === 'true';
+  const onlyActive = String(req.query.onlyActive ?? 'true') !== 'false';
+  const filter = buildBroadcastFilter({ onlyVerified, onlyActive });
+  const [total, verified, active] = await Promise.all([
+    User.countDocuments(filter),
+    User.countDocuments({ ...filter, isPhoneVerified: true }),
+    User.countDocuments({ ...filter, isActive: { $ne: false } }),
+  ]);
+  res.json({ success: true, data: { total, verified, active, filter: { onlyVerified, onlyActive } } });
+});
+
+export const sendSmsBroadcast = asyncHandler(async (req, res) => {
+  const message = String(req.body?.message || '').trim();
+  if (!message) throw ApiError.badRequest('Message is required');
+  if (message.length > MAX_SMS_LENGTH) {
+    throw ApiError.badRequest(`Message exceeds ${MAX_SMS_LENGTH} characters`);
+  }
+
+  const onlyVerified = !!req.body?.onlyVerified;
+  const onlyActive = req.body?.onlyActive !== false;
+  const filter = buildBroadcastFilter({ onlyVerified, onlyActive });
+
+  const recipients = await User.find(filter).select('phone fullName').lean();
+  if (recipients.length === 0) {
+    throw ApiError.badRequest('No recipients match the selected filters');
+  }
+
+  const CONCURRENCY = 5;
+  let sent = 0;
+  const failures = [];
+
+  for (let i = 0; i < recipients.length; i += CONCURRENCY) {
+    const batch = recipients.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map((u) => sendSMS(u.phone, message))
+    );
+    results.forEach((result, idx) => {
+      if (result.status === 'fulfilled') {
+        sent += 1;
+      } else {
+        failures.push({
+          phone: batch[idx].phone,
+          error: result.reason?.message || 'Unknown error',
+        });
+      }
+    });
+  }
+
+  AuditLog.create({
+    actor: req.user._id,
+    actorName: req.user.fullName,
+    actorRole: req.user.role,
+    action: 'sms.broadcast',
+    target: { kind: 'User', label: `${recipients.length} customers` },
+    method: req.method,
+    path: req.originalUrl,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    metadata: {
+      message,
+      onlyVerified,
+      onlyActive,
+      totalRecipients: recipients.length,
+      sent,
+      failed: failures.length,
+    },
+  }).catch(() => { /* best-effort logging */ });
+
+  res.json({
+    success: true,
+    data: {
+      totalRecipients: recipients.length,
+      sent,
+      failed: failures.length,
+      failures: failures.slice(0, 20),
+    },
+  });
 });
 
 export const auditLog = asyncHandler(async (req, res) => {

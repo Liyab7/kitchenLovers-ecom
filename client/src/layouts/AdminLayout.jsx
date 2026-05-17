@@ -3,7 +3,7 @@ import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   FiBarChart2, FiPackage, FiShoppingBag, FiUsers, FiSettings, FiLogOut, FiHome, FiMenu, FiX,
-  FiFolder, FiBox, FiTag, FiRotateCcw, FiImage, FiTruck, FiFileText,
+  FiFolder, FiBox, FiTag, FiRotateCcw, FiImage, FiTruck, FiFileText, FiMessageSquare,
 } from 'react-icons/fi';
 import { logoutThunk } from '../store/slices/authSlice.js';
 import Brand from '../components/common/Brand.jsx';
@@ -19,6 +19,7 @@ const adminItems = [
   { to: '/admin/refunds', label: 'Refunds', Icon: FiRotateCcw },
   { to: '/admin/promos', label: 'Promos', Icon: FiTag },
   { to: '/admin/customers', label: 'Customers', Icon: FiUsers },
+  { to: '/admin/sms-broadcast', label: 'SMS Broadcast', Icon: FiMessageSquare },
   { to: '/admin/audit-log', label: 'Audit log', Icon: FiFileText },
 ];
 

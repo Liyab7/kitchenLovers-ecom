@@ -36,6 +36,7 @@ import AdminBanners from './pages/admin/Banners.jsx';
 import AdminOrders from './pages/admin/Orders.jsx';
 import AdminDeliveries from './pages/admin/Deliveries.jsx';
 import AdminCustomers from './pages/admin/Customers.jsx';
+import AdminSmsBroadcast from './pages/admin/SmsBroadcast.jsx';
 import AdminAuditLog from './pages/admin/AuditLog.jsx';
 import RiderDeliveries from './pages/rider/Deliveries.jsx';
 import AdminInventory from './pages/admin/Inventory.jsx';
@@ -147,6 +148,7 @@ export default function App() {
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/deliveries" element={<AdminDeliveries />} />
           <Route path="/admin/customers" element={<AdminCustomers />} />
+          <Route path="/admin/sms-broadcast" element={<AdminSmsBroadcast />} />
           <Route path="/admin/promos" element={<AdminPromos />} />
           <Route path="/admin/refunds" element={<AdminRefunds />} />
           <Route path="/admin/audit-log" element={<AdminAuditLog />} />

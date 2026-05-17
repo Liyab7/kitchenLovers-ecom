@@ -13,6 +13,8 @@ router.get('/customers', ctrl.listCustomers);
 router.patch('/customers/:id', audit({ action: 'customer.update', targetKind: 'User', label: (r) => r.body?.fullName }), ctrl.updateCustomer);
 router.delete('/customers/:id', audit({ action: 'customer.delete', targetKind: 'User' }), ctrl.deleteCustomer);
 router.get('/reports/sales', ctrl.salesReport);
+router.get('/sms-broadcast/preview', ctrl.previewSmsBroadcast);
+router.post('/sms-broadcast', ctrl.sendSmsBroadcast);
 router.get('/audit-log', ctrl.auditLog);
 
 export default router;
