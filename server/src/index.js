@@ -21,9 +21,18 @@ import { initSocket } from './services/socket.service.js';
 import { runSeed } from './utils/seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// client/dist sits at ../../client/dist relative to server/src/
-const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
-const hasClientBuild = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));
+// Try every plausible location for client/dist. Render's cwd depends on whether the
+// service was set up with rootDir=. (repo root) or rootDir=server. Workspace installs
+// can also hoist things differently. We pick the first path that actually has index.html.
+const CLIENT_DIST_CANDIDATES = [
+  path.resolve(__dirname, '../../client/dist'),       // server/src → repo/client/dist
+  path.resolve(__dirname, '../client/dist'),          // server/src → server/client/dist (unlikely)
+  path.resolve(process.cwd(), 'client/dist'),         // cwd = repo root
+  path.resolve(process.cwd(), '../client/dist'),      // cwd = server/, dist is sibling
+  '/opt/render/project/src/client/dist',              // Render absolute path
+];
+const CLIENT_DIST = CLIENT_DIST_CANDIDATES.find((p) => fs.existsSync(path.join(p, 'index.html')));
+const hasClientBuild = !!CLIENT_DIST;
 
 const app = express();
 
@@ -124,7 +133,13 @@ async function start() {
     console.log(`[server] listening on http://localhost:${env.port} (${env.nodeEnv})`);
     console.log(`[server] uploads -> ${UPLOADS_DIR}`);
     console.log(`[server] public url -> ${env.publicUrl || '(same-origin)'}`);
-    console.log(`[server] frontend -> ${hasClientBuild ? `serving ${CLIENT_DIST}` : 'API only (no client/dist found)'}`);
+    if (hasClientBuild) {
+      console.log(`[server] frontend -> serving ${CLIENT_DIST}`);
+    } else {
+      console.warn(`[server] frontend -> API only (no client/dist found). Tried:`);
+      CLIENT_DIST_CANDIDATES.forEach((p) => console.warn(`           ${p}`));
+      console.warn(`[server] Run "npm run build" so /assets requests can be served.`);
+    }
     console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
     console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${env.paystack.enabled ? 'live' : 'stub'}`);
   });
