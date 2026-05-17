@@ -4,7 +4,7 @@
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 const sw = /** @type {ServiceWorkerGlobalScope} */ (self);
@@ -12,6 +12,11 @@ const sw = /** @type {ServiceWorkerGlobalScope} */ (self);
 // Workbox injectManifest plugin replaces `self.__WB_MANIFEST` literally — keep this exact token.
 precacheAndRoute(self.__WB_MANIFEST || []);
 cleanupOutdatedCaches();
+
+// Activate new SW immediately so users see fresh content on first visit after deploy,
+// no manual refresh required. Pairs with cleanupOutdatedCaches() above to evict stale precache.
+sw.addEventListener('install', () => sw.skipWaiting());
+sw.addEventListener('activate', (event) => event.waitUntil(sw.clients.claim()));
 
 // Explicit no-op fetch listener — some Chrome installability checks look for a
 // top-level fetch handler, separate from Workbox's internal routing.
@@ -50,14 +55,18 @@ registerRoute(
   })
 );
 
-// Public API caching (products / categories / banners)
+// Public API caching: NetworkFirst so the storefront always shows the latest
+// products/categories/banners (with their current image URLs). Cache is only
+// used as an offline fallback. StaleWhileRevalidate caused stale image refs
+// to render on first visit, requiring a manual refresh.
 registerRoute(
   ({ url }) =>
     url.pathname.startsWith('/api/products') ||
     url.pathname.startsWith('/api/categories') ||
     url.pathname.startsWith('/api/banners'),
-  new StaleWhileRevalidate({
+  new NetworkFirst({
     cacheName: 'api-public',
+    networkTimeoutSeconds: 8,
     plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 })],
   })
 );

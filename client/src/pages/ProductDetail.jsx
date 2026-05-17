@@ -174,8 +174,14 @@ export default function ProductDetail() {
         <div className="lg:col-span-5 space-y-4">
           <div className="card p-5 sm:p-6 space-y-4">
             <div>
+              {product.brand && (
+                <p className="text-[11px] uppercase tracking-widest text-primary font-semibold mb-1">{product.brand}</p>
+              )}
               <h1 className="text-xl sm:text-2xl font-semibold leading-tight">{product.name}</h1>
-              <div className="flex items-center gap-3 mt-2 text-sm text-ink/70">
+              {product.shortDescription && (
+                <p className="text-sm text-ink/70 mt-2 leading-relaxed">{product.shortDescription}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-ink/70">
                 {product.averageRating > 0 ? (
                   <span className="inline-flex items-center gap-1">
                     <FiStar className="text-primary" /> {product.averageRating.toFixed(1)} ({product.reviewsCount} review{product.reviewsCount === 1 ? '' : 's'})
@@ -184,13 +190,41 @@ export default function ProductDetail() {
                   <span className="text-ink/50">No reviews yet</span>
                 )}
                 {product.salesCount > 0 && <span className="text-ink/50">• {product.salesCount} sold</span>}
+                {product.sku && <span className="text-ink/50">• SKU: <span className="font-mono">{product.sku}</span></span>}
               </div>
             </div>
 
             <div className="border-t border-ink/5 pt-4">
-              <div className="text-3xl sm:text-4xl font-extrabold text-primary">{fmt(product.price, product.currency)}</div>
+              {product.discountPrice && product.discountPrice > 0 && product.discountPrice < product.price ? (
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-primary">{fmt(product.discountPrice, product.currency)}</span>
+                  <span className="text-lg text-ink/45 line-through">{fmt(product.price, product.currency)}</span>
+                  <span className="badge bg-danger/10 text-danger">
+                    −{Math.round(((product.price - product.discountPrice) / product.price) * 100)}%
+                  </span>
+                </div>
+              ) : (
+                <div className="text-3xl sm:text-4xl font-extrabold text-primary">{fmt(product.price, product.currency)}</div>
+              )}
               <div className="mt-2"><StockBadge product={product} /></div>
             </div>
+
+            {product.variants?.length > 0 && (
+              <div className="border-t border-ink/5 pt-4 space-y-3">
+                {product.variants.map((v, vi) => (
+                  <div key={vi}>
+                    <p className="text-xs uppercase tracking-wide text-ink/50 mb-1.5">{v.name}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {v.options?.map((opt, oi) => (
+                        <span key={oi} className="px-3 py-1.5 rounded-md border border-ink/15 text-sm text-ink/75 bg-canvas">
+                          {opt}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="border-t border-ink/5 pt-4 space-y-3">
               <div>
@@ -276,13 +310,69 @@ export default function ProductDetail() {
         </div>
         <div className="p-5 sm:p-6">
           {tab === TAB_DETAILS ? (
-            product.description ? (
-              <div className="prose max-w-none text-ink/80 whitespace-pre-line leading-relaxed">
-                {product.description}
-              </div>
-            ) : (
-              <p className="text-ink/50">No description provided.</p>
-            )
+            <div className="space-y-5">
+              {product.description ? (
+                <div className="prose max-w-none text-ink/80 whitespace-pre-line leading-relaxed">
+                  {product.description}
+                </div>
+              ) : (
+                <p className="text-ink/50">No description provided.</p>
+              )}
+
+              {/* Specs grid — surfaces every admin-entered detail that isn't already in the buy box. */}
+              {(product.brand || product.sku || product.deliveryWeight > 0 || product.categories?.length > 0) && (
+                <div className="border-t border-ink/10 pt-5">
+                  <h3 className="text-sm font-semibold text-ink mb-3">Product information</h3>
+                  <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    {product.brand && (
+                      <div className="flex justify-between border-b border-ink/5 py-1.5">
+                        <dt className="text-ink/55">Brand</dt>
+                        <dd className="font-medium">{product.brand}</dd>
+                      </div>
+                    )}
+                    {product.sku && (
+                      <div className="flex justify-between border-b border-ink/5 py-1.5">
+                        <dt className="text-ink/55">SKU</dt>
+                        <dd className="font-mono text-xs">{product.sku}</dd>
+                      </div>
+                    )}
+                    {product.categories?.length > 0 && (
+                      <div className="flex justify-between border-b border-ink/5 py-1.5">
+                        <dt className="text-ink/55">Category</dt>
+                        <dd className="font-medium text-right">
+                          {product.categories.map((c) => c.name || c).filter(Boolean).join(', ')}
+                        </dd>
+                      </div>
+                    )}
+                    {product.deliveryWeight > 0 && (
+                      <div className="flex justify-between border-b border-ink/5 py-1.5">
+                        <dt className="text-ink/55">Weight</dt>
+                        <dd className="font-medium">{product.deliveryWeight} kg</dd>
+                      </div>
+                    )}
+                    {product.trackInventory && (
+                      <div className="flex justify-between border-b border-ink/5 py-1.5">
+                        <dt className="text-ink/55">In stock</dt>
+                        <dd className="font-medium">{product.stock} unit{product.stock === 1 ? '' : 's'}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {product.tags?.length > 0 && (
+                <div className="border-t border-ink/10 pt-5">
+                  <h3 className="text-sm font-semibold text-ink mb-2">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((t, i) => (
+                      <span key={i} className="badge bg-primary/5 text-primary border border-primary/15">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-5">
               {eligibleOrderId && (
