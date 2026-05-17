@@ -64,6 +64,18 @@ app.use(
 
 app.use('/api', routes);
 
+// Root probe — Render (and uptime monitors) hit `/` to check the service is alive.
+// Without this, every probe logs a 404. Reply with a lightweight JSON banner.
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'kitchen-ecom-api',
+    status: 'ok',
+    docs: '/api/health',
+    time: new Date().toISOString(),
+  });
+});
+app.head('/', (_req, res) => res.sendStatus(200));
+
 app.use(notFound);
 app.use(errorHandler);
 
@@ -86,6 +98,9 @@ async function start() {
     console.log(`[server] uploads -> ${UPLOADS_DIR}`);
     console.log(`[server] public url -> ${env.publicUrl || '(same-origin)'}`);
     console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
+    if (env.nodeEnv === 'production' && env.allowedOrigins.length === 1 && env.allowedOrigins[0].startsWith('http://localhost')) {
+      console.warn('[server] WARNING: CLIENT_URL is unset in production — CORS will block your frontend. Set CLIENT_URL to your web app origin (e.g. https://your-site.onrender.com).');
+    }
     console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${env.paystack.enabled ? 'live' : 'stub'}`);
   });
 }
