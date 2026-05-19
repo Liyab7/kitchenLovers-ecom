@@ -25,6 +25,8 @@ export default function SmsBroadcast() {
   const [message, setMessage] = useState('');
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [onlyActive, setOnlyActive] = useState(true);
+  const [includeUsers, setIncludeUsers] = useState(true);
+  const [includeSubscribers, setIncludeSubscribers] = useState(true);
   const [preview, setPreview] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [sending, setSending] = useState(false);
@@ -35,7 +37,7 @@ export default function SmsBroadcast() {
     setPreviewing(true);
     try {
       const { data } = await api.get('/admin/sms-broadcast/preview', {
-        params: { onlyVerified, onlyActive },
+        params: { onlyVerified, onlyActive, includeUsers, includeSubscribers },
       });
       setPreview(data.data);
     } catch (err) {
@@ -45,7 +47,7 @@ export default function SmsBroadcast() {
     }
   }
 
-  useEffect(() => { loadPreview(); }, [onlyVerified, onlyActive]);
+  useEffect(() => { loadPreview(); }, [onlyVerified, onlyActive, includeUsers, includeSubscribers]);
 
   async function submit(e) {
     e.preventDefault();
@@ -77,6 +79,8 @@ export default function SmsBroadcast() {
         message: trimmed,
         onlyVerified,
         onlyActive,
+        includeUsers,
+        includeSubscribers,
       });
       setResult(data.data);
       toast.success(`Sent to ${data.data.sent} of ${data.data.totalRecipients}`);
@@ -152,31 +156,70 @@ export default function SmsBroadcast() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3">
-          <label className="flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02]">
-            <input
-              type="checkbox"
-              checked={onlyActive}
-              onChange={(e) => setOnlyActive(e.target.checked)}
-              className="accent-primary mt-0.5"
-            />
-            <span>
-              <span className="block text-sm font-medium">Active accounts only</span>
-              <span className="block text-xs text-ink/60">Skip disabled customer accounts</span>
-            </span>
-          </label>
-          <label className="flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02]">
-            <input
-              type="checkbox"
-              checked={onlyVerified}
-              onChange={(e) => setOnlyVerified(e.target.checked)}
-              className="accent-primary mt-0.5"
-            />
-            <span>
-              <span className="block text-sm font-medium">Phone-verified only</span>
-              <span className="block text-xs text-ink/60">Skip unverified phone numbers (recommended)</span>
-            </span>
-          </label>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-ink/50 mb-1.5">Audience</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02]">
+              <input
+                type="checkbox"
+                checked={includeUsers}
+                onChange={(e) => setIncludeUsers(e.target.checked)}
+                className="accent-primary mt-0.5"
+              />
+              <span>
+                <span className="block text-sm font-medium">Registered customers</span>
+                <span className="block text-xs text-ink/60">
+                  {preview ? `${preview.userTotal ?? 0} matching` : 'Accounts on the platform'}
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02]">
+              <input
+                type="checkbox"
+                checked={includeSubscribers}
+                onChange={(e) => setIncludeSubscribers(e.target.checked)}
+                className="accent-primary mt-0.5"
+              />
+              <span>
+                <span className="block text-sm font-medium">Newsletter subscribers</span>
+                <span className="block text-xs text-ink/60">
+                  {preview ? `${preview.subscriberTotal ?? 0} phone subscribers` : 'Phones from "Stay Updated" form'}
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-ink/50 mb-1.5">Filters (apply to registered customers)</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className={`flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02] ${!includeUsers ? 'opacity-50' : ''}`}>
+              <input
+                type="checkbox"
+                checked={onlyActive}
+                onChange={(e) => setOnlyActive(e.target.checked)}
+                disabled={!includeUsers}
+                className="accent-primary mt-0.5"
+              />
+              <span>
+                <span className="block text-sm font-medium">Active accounts only</span>
+                <span className="block text-xs text-ink/60">Skip disabled customer accounts</span>
+              </span>
+            </label>
+            <label className={`flex items-start gap-2 p-3 rounded-md border border-ink/10 cursor-pointer hover:bg-ink/[0.02] ${!includeUsers ? 'opacity-50' : ''}`}>
+              <input
+                type="checkbox"
+                checked={onlyVerified}
+                onChange={(e) => setOnlyVerified(e.target.checked)}
+                disabled={!includeUsers}
+                className="accent-primary mt-0.5"
+              />
+              <span>
+                <span className="block text-sm font-medium">Phone-verified only</span>
+                <span className="block text-xs text-ink/60">Skip unverified phone numbers (recommended)</span>
+              </span>
+            </label>
+          </div>
         </div>
 
         <div className="p-4 rounded-md bg-canvas border border-ink/10">
@@ -185,14 +228,18 @@ export default function SmsBroadcast() {
             <span className="font-medium">
               {previewing ? 'Counting recipients…' : (
                 <>
-                  {preview?.total ?? 0} customer{preview?.total === 1 ? '' : 's'} will receive this message
+                  {preview?.total ?? 0} recipient{preview?.total === 1 ? '' : 's'} will receive this message
                 </>
               )}
             </span>
           </div>
           {preview && (
             <p className="text-xs text-ink/55 mt-1">
-              {preview.verified} phone-verified · {preview.active} active
+              {includeUsers && (<>{preview.userTotal ?? 0} customers</>)}
+              {includeUsers && includeSubscribers && ' · '}
+              {includeSubscribers && (<>{preview.subscriberTotal ?? 0} subscribers</>)}
+              {(includeUsers || includeSubscribers) && ' · '}
+              deduplicated by phone
             </p>
           )}
         </div>

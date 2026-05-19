@@ -10,6 +10,7 @@ import { Notification } from '../models/Notification.js';
 import { PushSubscription } from '../models/PushSubscription.js';
 import { SavedCard } from '../models/SavedCard.js';
 import { SearchQuery } from '../models/SearchQuery.js';
+import { Subscriber } from '../models/Subscriber.js';
 import { sendSMS } from '../services/sms.service.js';
 
 const startOfDay = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -230,16 +231,64 @@ function buildBroadcastFilter({ onlyVerified, onlyActive }) {
   return filter;
 }
 
+// Collects recipient phone numbers from registered users + newsletter subscribers,
+// applying admin-selected filters. Returns a de-duplicated set with their source.
+async function collectBroadcastRecipients({ onlyVerified, onlyActive, includeUsers, includeSubscribers }) {
+  const seen = new Map(); // phone → { phone, fullName, source }
+
+  if (includeUsers) {
+    const filter = buildBroadcastFilter({ onlyVerified, onlyActive });
+    const users = await User.find(filter).select('phone fullName').lean();
+    for (const u of users) {
+      if (u.phone && !seen.has(u.phone)) {
+        seen.set(u.phone, { phone: u.phone, fullName: u.fullName, source: 'user' });
+      }
+    }
+  }
+
+  if (includeSubscribers) {
+    const subs = await Subscriber.find({
+      phone: { $exists: true, $ne: '' },
+      isUnsubscribed: { $ne: true },
+    }).select('phone fullName').lean();
+    for (const s of subs) {
+      if (s.phone && !seen.has(s.phone)) {
+        seen.set(s.phone, { phone: s.phone, fullName: s.fullName, source: 'subscriber' });
+      }
+    }
+  }
+
+  return [...seen.values()];
+}
+
 export const previewSmsBroadcast = asyncHandler(async (req, res) => {
   const onlyVerified = String(req.query.onlyVerified ?? 'false') === 'true';
   const onlyActive = String(req.query.onlyActive ?? 'true') !== 'false';
+  const includeUsers = String(req.query.includeUsers ?? 'true') !== 'false';
+  const includeSubscribers = String(req.query.includeSubscribers ?? 'true') !== 'false';
+
   const filter = buildBroadcastFilter({ onlyVerified, onlyActive });
-  const [total, verified, active] = await Promise.all([
-    User.countDocuments(filter),
-    User.countDocuments({ ...filter, isPhoneVerified: true }),
-    User.countDocuments({ ...filter, isActive: { $ne: false } }),
+  const [userTotal, userVerified, subscriberTotal, combined] = await Promise.all([
+    includeUsers ? User.countDocuments(filter) : Promise.resolve(0),
+    includeUsers ? User.countDocuments({ ...filter, isPhoneVerified: true }) : Promise.resolve(0),
+    includeSubscribers ? Subscriber.countDocuments({
+      phone: { $exists: true, $ne: '' },
+      isUnsubscribed: { $ne: true },
+    }) : Promise.resolve(0),
+    collectBroadcastRecipients({ onlyVerified, onlyActive, includeUsers, includeSubscribers }),
   ]);
-  res.json({ success: true, data: { total, verified, active, filter: { onlyVerified, onlyActive } } });
+
+  res.json({
+    success: true,
+    data: {
+      total: combined.length,        // deduped final recipient count
+      verified: userVerified,
+      active: userTotal,             // legacy field kept for back-compat with existing UI
+      userTotal,
+      subscriberTotal,
+      filter: { onlyVerified, onlyActive, includeUsers, includeSubscribers },
+    },
+  });
 });
 
 export const sendSmsBroadcast = asyncHandler(async (req, res) => {
@@ -251,9 +300,15 @@ export const sendSmsBroadcast = asyncHandler(async (req, res) => {
 
   const onlyVerified = !!req.body?.onlyVerified;
   const onlyActive = req.body?.onlyActive !== false;
-  const filter = buildBroadcastFilter({ onlyVerified, onlyActive });
+  const includeUsers = req.body?.includeUsers !== false;
+  const includeSubscribers = req.body?.includeSubscribers !== false;
+  if (!includeUsers && !includeSubscribers) {
+    throw ApiError.badRequest('Select at least one audience (customers or subscribers)');
+  }
 
-  const recipients = await User.find(filter).select('phone fullName').lean();
+  const recipients = await collectBroadcastRecipients({
+    onlyVerified, onlyActive, includeUsers, includeSubscribers,
+  });
   if (recipients.length === 0) {
     throw ApiError.badRequest('No recipients match the selected filters');
   }
@@ -293,6 +348,8 @@ export const sendSmsBroadcast = asyncHandler(async (req, res) => {
       message,
       onlyVerified,
       onlyActive,
+      includeUsers,
+      includeSubscribers,
       totalRecipients: recipients.length,
       sent,
       failed: failures.length,

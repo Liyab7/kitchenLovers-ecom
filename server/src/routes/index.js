@@ -17,6 +17,7 @@ import deliveryRoutes from './delivery.routes.js';
 import deliveriesRoutes from './deliveries.routes.js';
 import searchRoutes from './search.routes.js';
 import pushRoutes from './push.routes.js';
+import subscriberRoutes from './subscriber.routes.js';
 
 import uploadRoutes from './upload.routes.js';
 
@@ -43,5 +44,6 @@ router.use('/delivery-methods', deliveryRoutes);
 router.use('/deliveries', deliveriesRoutes);
 router.use('/search', searchRoutes);
 router.use('/push', pushRoutes);
+router.use('/subscribers', subscriberRoutes);
 
 export default router;

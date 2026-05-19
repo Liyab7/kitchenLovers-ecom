@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiTruck, FiShield, FiRefreshCw, FiHeadphones, FiArrowRight, FiGrid, FiChevronRight, FiChevronLeft, FiTag,
+  FiMail, FiPhone,
 } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import {
   FaFacebookF, FaInstagram, FaXTwitter, FaYoutube, FaTiktok, FaWhatsapp,
 } from 'react-icons/fa6';
@@ -208,6 +210,75 @@ const SOCIALS = [
   { href: 'https://tiktok.com/@kitchenlovers', label: 'TikTok', Icon: FaTiktok, color: 'hover:bg-black' },
   { href: 'https://wa.me/233551234567', label: 'WhatsApp', Icon: FaWhatsapp, color: 'hover:bg-[#25D366]' },
 ];
+
+function NewsletterForm() {
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!email.trim() && !phone.trim()) {
+      toast.error('Enter your email or phone number');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data } = await api.post('/subscribers', {
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+      });
+      toast.success(data?.message || 'Subscribed!');
+      setEmail('');
+      setPhone('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not subscribe');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-3 sm:mt-4 sm:max-w-md sm:mx-auto space-y-2">
+      <div className="grid sm:grid-cols-2 gap-2">
+        <div className="relative">
+          <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+          <input
+            type="email"
+            placeholder="Your email"
+            className="input pl-10 w-full"
+            aria-label="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
+        <div className="relative">
+          <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/40" />
+          <input
+            type="tel"
+            placeholder="Your phone (for SMS)"
+            className="input pl-10 w-full"
+            aria-label="Phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            autoComplete="tel"
+          />
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={busy}
+        className="btn-primary w-full inline-flex items-center justify-center gap-2"
+      >
+        {busy ? 'Subscribing…' : 'Subscribe'}
+      </button>
+      <p className="text-[10px] text-ink/45 text-center">
+        Provide at least one. We never share your contact and you can unsubscribe anytime.
+      </p>
+    </form>
+  );
+}
 
 function SocialIcons() {
   return (
@@ -419,18 +490,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <form
-          onSubmit={(e) => e.preventDefault()}
-          className="mt-3 sm:mt-4 flex flex-row gap-2 sm:max-w-md sm:mx-auto"
-        >
-          <input
-            type="email"
-            placeholder="Enter your email"
-            className="input flex-1"
-            aria-label="Email address"
-          />
-          <button type="submit" className="btn-primary px-4 sm:px-6 shrink-0">Subscribe</button>
-        </form>
+        <NewsletterForm />
         <SocialIcons />
       </section>
     </div>
