@@ -54,12 +54,28 @@ export const env = {
     sandbox: String(process.env.ARKESEL_SANDBOX || '').toLowerCase() === 'true',
     enabled: Boolean(process.env.ARKESEL_API_KEY),
   },
-  paystack: {
-    secret: process.env.PAYSTACK_SECRET_KEY,
-    public: process.env.PAYSTACK_PUBLIC_KEY,
-    webhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET,
-    enabled: Boolean(process.env.PAYSTACK_SECRET_KEY),
-  },
+  paystack: (() => {
+    // PAYSTACK_MODE selects which key pair to use. Defaults to "test" so a misconfig
+    // never accidentally charges real cards. Accepts: "test" | "live".
+    const mode = String(process.env.PAYSTACK_MODE || 'test').toLowerCase() === 'live' ? 'live' : 'test';
+    // Prefer the mode-specific keys; fall back to the legacy single-key vars so existing
+    // deploys keep working without a config rewrite.
+    const secret =
+      (mode === 'live'
+        ? process.env.PAYSTACK_SECRET_KEY_LIVE
+        : process.env.PAYSTACK_SECRET_KEY_TEST) || process.env.PAYSTACK_SECRET_KEY;
+    const publicKey =
+      (mode === 'live'
+        ? process.env.PAYSTACK_PUBLIC_KEY_LIVE
+        : process.env.PAYSTACK_PUBLIC_KEY_TEST) || process.env.PAYSTACK_PUBLIC_KEY;
+    return {
+      mode,
+      secret,
+      public: publicKey,
+      webhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET,
+      enabled: Boolean(secret),
+    };
+  })(),
   otp: {
     length: Number(process.env.OTP_LENGTH || 6),
     expiresMinutes: Number(process.env.OTP_EXPIRES_MINUTES || 10),

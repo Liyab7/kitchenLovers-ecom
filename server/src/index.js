@@ -154,7 +154,8 @@ async function start() {
       console.warn(`[server] Run "npm run build" so /assets requests can be served.`);
     }
     console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
-    console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${env.paystack.enabled ? 'live' : 'stub'}`);
+    const paystackStatus = env.paystack.enabled ? env.paystack.mode : 'stub';
+    console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${paystackStatus}`);
   });
 }
 

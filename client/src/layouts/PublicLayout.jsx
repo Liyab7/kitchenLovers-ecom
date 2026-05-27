@@ -3,6 +3,7 @@ import Header from '../components/layout/Header.jsx';
 import Footer from '../components/layout/Footer.jsx';
 import MobileBottomNav from '../components/layout/MobileBottomNav.jsx';
 import InstallPrompt from '../components/common/InstallPrompt.jsx';
+import ScrollToTop from '../components/common/ScrollToTop.jsx';
 
 export default function PublicLayout() {
   return (
@@ -13,6 +14,7 @@ export default function PublicLayout() {
       </main>
       <Footer />
       <MobileBottomNav />
+      <ScrollToTop />
       <InstallPrompt />
     </div>
   );

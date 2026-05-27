@@ -5,8 +5,8 @@ import mongoose from 'mongoose';
 // Anyone can subscribe without an account; deduped on phone (or email if no phone).
 const subscriberSchema = new mongoose.Schema(
   {
-    phone: { type: String, trim: true, index: true, sparse: true },
-    email: { type: String, trim: true, lowercase: true, index: true, sparse: true },
+    phone: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
     fullName: { type: String, trim: true },
     source: { type: String, default: 'newsletter' }, // newsletter | popup | checkout | manual
     isUnsubscribed: { type: Boolean, default: false, index: true },
@@ -24,7 +24,8 @@ subscriberSchema.pre('validate', function (next) {
   next();
 });
 
-// Compound uniqueness — same phone OR same email can't be subscribed twice.
+// Unique-but-sparse: same phone OR same email can't be subscribed twice,
+// but a row without one of them is fine.
 subscriberSchema.index({ phone: 1 }, { unique: true, sparse: true });
 subscriberSchema.index({ email: 1 }, { unique: true, sparse: true });
 

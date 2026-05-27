@@ -16,8 +16,13 @@ export async function runSeed({ log = console.log } = {}) {
   const superPhone = process.env.SEED_SUPER_ADMIN_PHONE || '+10000000000';
   const superPass = process.env.SEED_SUPER_ADMIN_PASSWORD || 'ChangeMe123!';
 
-  const existingSuper = await User.findOne({ phone: superPhone });
-  if (!existingSuper) {
+  // Skip if ANY super admin already exists — prevents creating a duplicate when
+  // SEED_SUPER_ADMIN_PHONE changes between deploys. The DB stays the source of truth
+  // once you've added admins manually via the panel.
+  const anySuper = await User.findOne({ role: ROLES.SUPER_ADMIN }).select('_id phone').lean();
+  if (anySuper) {
+    log(`[seed] super admin already exists (${anySuper.phone}) — skipping`);
+  } else {
     await User.create({
       fullName: 'Super Admin',
       phone: superPhone,
@@ -26,13 +31,13 @@ export async function runSeed({ log = console.log } = {}) {
       isPhoneVerified: true,
     });
     log(`[seed] created super admin: ${superPhone}`);
-  } else {
-    log(`[seed] super admin already exists: ${superPhone}`);
   }
 
-  const adminPhone = '+20000000000';
-  const existingAdmin = await User.findOne({ phone: adminPhone });
-  if (!existingAdmin) {
+  const adminPhone = process.env.SEED_ADMIN_PHONE || '+20000000000';
+  const anyAdmin = await User.findOne({ role: ROLES.ADMIN }).select('_id phone').lean();
+  if (anyAdmin) {
+    log(`[seed] admin already exists (${anyAdmin.phone}) — skipping`);
+  } else {
     await User.create({
       fullName: 'Store Admin',
       phone: adminPhone,
@@ -41,8 +46,6 @@ export async function runSeed({ log = console.log } = {}) {
       isPhoneVerified: true,
     });
     log(`[seed] created admin: ${adminPhone}`);
-  } else {
-    log(`[seed] admin already exists: ${adminPhone}`);
   }
 
   // Only seed default categories on a brand-new database. Once the admin has
