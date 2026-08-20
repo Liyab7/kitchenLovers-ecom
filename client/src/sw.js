@@ -6,6 +6,7 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 const sw = /** @type {ServiceWorkerGlobalScope} */ (self);
 
@@ -28,19 +29,48 @@ registerRoute(new NavigationRoute(async ({ event }) => {
   catch { return caches.match('/index.html'); }
 }));
 
-// Cloudinary images — CacheFirst, long TTL (URLs are content-addressed)
+// When a Workbox strategy throws, the FetchEvent's respondWith() rejects and the
+// browser reports a hard network error — a permanently broken <img> with no retry.
+// Wrap every strategy so any handler failure (CSP, quota, cache corruption, offline)
+// degrades to a plain network request instead of a broken response.
+// `transform` optionally rewrites the request the strategy sees; the network fallback
+// always replays the ORIGINAL request so a rewrite can never be the thing that fails.
+const failOpen = (strategy, transform) => async (params) => {
+  try {
+    const request = transform ? transform(params.request) : params.request;
+    const response = await strategy.handle({ ...params, request });
+    if (response) return response;
+  } catch {
+    // fall through to the network below
+  }
+  return fetch(params.request);
+};
+
+// Cross-origin <img> requests are `no-cors`, which yields an *opaque* response:
+// status 0, indistinguishable from a 404 or a 500. Caching those poisons the cache
+// with broken images for the full TTL. Cloudinary sends `Access-Control-Allow-Origin: *`,
+// so re-issue the request as CORS to get a real, inspectable status we can trust.
+const asCors = (request) => new Request(request.url, { mode: 'cors', credentials: 'omit' });
+
+// Cloudinary images — CacheFirst, long TTL (URLs are content-addressed & versioned).
+// Only genuine 200s are cached; anything else falls through to the network next time.
+const cloudinaryStrategy = new CacheFirst({
+  cacheName: 'cloudinary-images',
+  plugins: [
+    new CacheableResponsePlugin({ statuses: [200] }),
+    new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+  ],
+});
+
 registerRoute(
   ({ url }) => url.hostname.includes('res.cloudinary.com'),
-  new CacheFirst({
-    cacheName: 'cloudinary-images',
-    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 })],
-  })
+  failOpen(cloudinaryStrategy, asCors)
 );
 
 // Local /uploads — NetworkFirst so stale 404s are never served from cache
 registerRoute(
   ({ url }) => url.pathname.startsWith('/uploads'),
-  new NetworkFirst({ cacheName: 'local-uploads' })
+  failOpen(new NetworkFirst({ cacheName: 'local-uploads' }))
 );
 
 // Other images (icons, brand assets, etc.)
@@ -49,10 +79,15 @@ registerRoute(
     request.destination === 'image' &&
     !url.hostname.includes('res.cloudinary.com') &&
     !url.pathname.startsWith('/uploads'),
-  new CacheFirst({
-    cacheName: 'images',
-    plugins: [new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 })],
-  })
+  failOpen(
+    new CacheFirst({
+      cacheName: 'images',
+      plugins: [
+        new CacheableResponsePlugin({ statuses: [200] }),
+        new ExpirationPlugin({ maxEntries: 80, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+      ],
+    })
+  )
 );
 
 // Public API caching: NetworkFirst so the storefront always shows the latest
@@ -64,11 +99,13 @@ registerRoute(
     url.pathname.startsWith('/api/products') ||
     url.pathname.startsWith('/api/categories') ||
     url.pathname.startsWith('/api/banners'),
-  new NetworkFirst({
-    cacheName: 'api-public',
-    networkTimeoutSeconds: 8,
-    plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 })],
-  })
+  failOpen(
+    new NetworkFirst({
+      cacheName: 'api-public',
+      networkTimeoutSeconds: 8,
+      plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 })],
+    })
+  )
 );
 
 // --- Push notifications --------------------------------------------------

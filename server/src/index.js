@@ -36,6 +36,12 @@ const hasClientBuild = !!CLIENT_DIST;
 
 const app = express();
 
+// Origins that serve user-uploaded media (product/category/banner images).
+//
+// Every entry here MUST be allowed by BOTH img-src and connect-src — see below.
+// Add new CDNs to this one list so the two directives can never drift apart.
+const MEDIA_ORIGINS = ['https://res.cloudinary.com'];
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -45,8 +51,14 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         styleSrcElem: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
-        connectSrc: ["'self'", 'ws:', 'wss:'],
+        // <img> tags rendered by the page are governed by img-src.
+        imgSrc: ["'self'", 'data:', 'blob:', ...MEDIA_ORIGINS],
+        // The service worker re-issues those same image requests with fetch() from
+        // inside the worker, and fetch() is governed by connect-src — NOT img-src.
+        // Leaving media origins out of connect-src looks fine on a first visit and
+        // then breaks every CDN image the moment the service worker takes control,
+        // because the worker's fetch is blocked and respondWith() rejects.
+        connectSrc: ["'self'", 'ws:', 'wss:', ...MEDIA_ORIGINS],
         fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
         workerSrc: ["'self'", 'blob:'],
         manifestSrc: ["'self'"],
@@ -54,15 +66,34 @@ app.use(
     },
   })
 );
+// This service serves the SPA and the API on one origin, so most traffic is same-origin.
+// Two subtleties make a naive allow-list dangerous here:
+//   1. Browsers send an Origin header on same-origin POST/PUT/DELETE, and `<script
+//      type="module">` is always fetched in CORS mode — so even loading the app's own
+//      bundle presents an Origin.
+//   2. Rejecting by calling back with an Error turns that into a 500 from the error
+//      handler, which takes down the whole page rather than just failing a CORS check.
+// So: always accept an Origin that matches the host we were reached on, and refuse
+// unknown origins by omitting the CORS headers (cb(null, {origin: false})) instead of
+// erroring. A missing or stale CLIENT_URL can then never stop the app from loading.
+const sameOriginAsRequest = (origin, host) => {
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+};
+
 app.use(
-  cors({
-    origin: (origin, cb) => {
-      // Allow same-origin / non-browser requests (no Origin header)
-      if (!origin) return cb(null, true);
-      if (env.allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`CORS: origin ${origin} not allowed`));
-    },
-    credentials: true,
+  cors((req, cb) => {
+    const origin = req.headers.origin;
+    const allowed =
+      !origin || // non-browser clients and plain navigations send no Origin
+      sameOriginAsRequest(origin, req.headers.host) ||
+      env.allowedOrigins.includes(origin);
+    if (!allowed) console.warn(`[cors] rejected origin: ${origin}`);
+    cb(null, { origin: allowed, credentials: true });
   })
 );
 
@@ -156,6 +187,19 @@ async function start() {
     console.log(`[server] allowed origins -> ${env.allowedOrigins.join(', ')}`);
     const paystackStatus = env.paystack.enabled ? env.paystack.mode : 'stub';
     console.log(`[server] arkesel: ${env.arkesel.enabled ? 'live' : 'stub'} | paystack: ${paystackStatus}`);
+    console.log(`[server] media origins (csp img-src + connect-src) -> ${MEDIA_ORIGINS.join(', ')}`);
+    if (env.cloudinary.enabled) {
+      console.log(`[server] cloudinary: live (cloud "${env.cloudinary.cloudName}")`);
+    } else {
+      console.warn(
+        `[server] cloudinary: DISABLED — CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET missing. ` +
+          `New uploads will be written to local disk (${UPLOADS_DIR}) instead of the CDN.`
+      );
+      if (env.nodeEnv === 'production') {
+        console.warn(`[server] cloudinary: set those three vars in the Render env group — ` +
+          `local-disk uploads are lost whenever the instance is replaced.`);
+      }
+    }
   });
 }
 
